@@ -1,6 +1,6 @@
 # Plugin update doctor development
 
-Independent DSH bundle, not a WinKit module. Target current installed DSH 0.2.2-rc.3 APIs. Read installed dsh-doc before changing integration APIs.
+Independent DSH bundle. Target current installed DSH 0.2.2-rc.3 APIs. Read installed dsh-doc before changing integration APIs.
 
 - Host operations reuse pluginManager; never hand-edit user profile/package/patch files.
 - User confirms mutations through the authenticated same-origin panel; agent tools expose only diagnostics and plans without confirmation tickets.

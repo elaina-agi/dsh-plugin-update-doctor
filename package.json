@@ -1,0 +1,30 @@
+{
+  "name": "dsh-plugin-update-doctor",
+  "version": "0.3.0",
+  "license": "MIT",
+  "author": "elaina-agi",
+  "repository": { "type": "git", "url": "git+https://github.com/elaina-agi/dsh-plugin-update-doctor.git" },
+  "homepage": "https://github.com/elaina-agi/dsh-plugin-update-doctor#readme",
+  "bugs": { "url": "https://github.com/elaina-agi/dsh-plugin-update-doctor/issues" },
+  "type": "module",
+  "description": "DeepSeek Harness 内勾选批量在线更新插件，支持用户确认停止任务和已验证 WSL 代际更新，保留脱敏诊断。",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": ["index.js", "client.js", "lib", "native/win-x64/lock-probe.exe", "native/LockProbe.cs", "native/build.ps1", "locale", "docs", "icon.svg", "cordis.patch.yml", "README.md"],
+  "scripts": { "test": "node --test tests/*.test.mjs", "check": "node --check index.js && node --check client.js" },
+  "engines": { "node": ">=24.0.0", "dsh": ">=0.2.2-rc.3 <0.3.0" },
+  "dependencies": { "yaml": "^2.9.0" },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": ">=0.2.2-rc.3 <0.3.0",
+    "@deepseek-ai/dsh-app-boot": ">=0.2.2-rc.3 <0.3.0"
+  },
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml", "platforms": ["win32"] },
+    "client": { "platform": "web", "immediately": true, "inject": ["@deepseek-ai/dsh-client-ui-slots", "@deepseek-ai/dsh-client-ui-layout", "@deepseek-ai/dsh-client-ui-sidebar", "@deepseek-ai/dsh-client-locale", "@deepseek-ai/dsh-client-modules"] }
+  }
+}

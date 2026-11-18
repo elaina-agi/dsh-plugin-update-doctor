@@ -1,0 +1,24 @@
+node_modules/
+artifacts/
+experiments/*-result.json
+# Raw diagnostics and locally generated publication artifacts stay private.
+experiments/*.json
+*.tgz
+*.zip
+*.bundle
+*.pdb
+npm-debug.log*
+.npmrc
+pnpm-workspace.local.yaml
+publication-private/
+.tools/
+.env
+.env.*
+*.log
+*.pfx
+*.pem
+*.key
+*.tmp
+**/bin/
+**/obj/
+!native/win-x64/lock-probe.exe

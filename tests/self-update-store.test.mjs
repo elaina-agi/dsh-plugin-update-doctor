@@ -22,6 +22,30 @@ async function fixture(t, options = {}) {
     return { directory, root, redact, store: new SelfUpdateStore(root, redact, options) };
 }
 
+test('GitHub receipts bind exact old/new commits and sanitize official Git targets', async t => {
+    const { root, redact, store } = await fixture(t);
+    const repository = 'elaina-agi/dsh-plugin-update-doctor', fromCommit = 'a'.repeat(40), toCommit = 'b'.repeat(40);
+    const attempt = await store.start(target({ registry: undefined, sourceKind: 'git', repository, fromCommit, toCommit }));
+    await store.markHandedOff(attempt.id);
+    const result = applied({ application: 'failed', stage: 'install', target: `github:${repository}#${toCommit}`, error: { code: 'owned-failure' } });
+    result.restore = { changed: true, application: 'applied', stage: 'enable', target: `git+https://github.com/${repository}.git#${fromCommit}`, bundle: SELF, version: '0.3.0' };
+    await store.finish(attempt.id, result);
+    const next = new SelfUpdateStore(root, redact), state = await next.latest();
+    assert.equal(state.attempt.registry, undefined); assert.equal(state.attempt.fromCommit, fromCommit); assert.equal(state.attempt.toCommit, toCommit);
+    assert.equal(state.result.result.target, SELF); assert.equal(state.result.restore.target, SELF); assert.equal(state.result.result.application, 'failed');
+    const disk = await readFile(join(root, attempt.id, 'result.json'), 'utf8'); assert(!disk.includes('git+https')); assert(!disk.includes('github:'));
+});
+
+test('GitHub mixed source, malformed pin and foreign official spec never become known success', async t => {
+    const { root, store } = await fixture(t);
+    const git = { registry: undefined, sourceKind: 'git', repository: 'elaina-agi/dsh-plugin-update-doctor', fromCommit: 'a'.repeat(40), toCommit: 'b'.repeat(40) };
+    for (const changes of [{ registry: source }, { fromCommit: 'main' }, { repository: 'other/repo' }, { toCommit: git.fromCommit }]) await assert.rejects(() => store.start(target({ ...git, ...changes })));
+    await assert.rejects(() => access(root), error => error.code === 'ENOENT');
+    const attempt = await store.start(target(git));
+    for (const targetSpec of ['github:other/repo#' + git.toCommit, 'github:' + git.repository + '#' + git.fromCommit]) await assert.rejects(() => store.finish(attempt.id, applied({ target: targetSpec, stage: 'install' })), /self-update-official-target-invalid/);
+    assert.equal((await store.latest()).result, null);
+});
+
 test('new plugin generation reads waiting and handoff without rewriting attempt, and accepts late official result', async t => {
     const { root, redact, store } = await fixture(t);
     const attempt = await store.start(target({ previousSha256: 'a'.repeat(64), nextSha256: 'b'.repeat(64) }));

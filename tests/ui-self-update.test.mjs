@@ -8,7 +8,8 @@ test('self-update uses a separate exact-version preparation and does not mix wit
     const prepare = section('      const prepare =', '      const prepareRestore =');
     assert(prepare.includes("item.mode === 'host-self-update'"));
     assert(prepare.includes('selfSelected && selected.length !== 1'));
-    assert(prepare.includes("read('prepare-self-update', { version: selfSelected.latestVersion }"));
+    assert(prepare.includes("read('prepare-self-update', { version: selfSelected.latestVersion,"));
+    assert(prepare.includes("selfSelected.sourceKind === 'git' ? { commit: selfSelected.latestCommit } : {}"));
     assert(!prepare.includes('spec:') && !prepare.includes('archivePath:'));
     assert(code.includes('normalAvailable.slice(0, 20)'));
     assert(code.includes("item.mode === 'host-self-update') { setChecked(new Set([item.name]))"));

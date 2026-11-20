@@ -1,4 +1,15 @@
-# 验证状态（v0.4.1）
+# 验证状态（v0.5.0）
+
+## GitHub 自身升级（2026-11-20）
+
+新增固定公开仓库／完整提交的独立自更新交接，沿用实际安装DSH **0.2.2-rc.5**公开Git `updateBundle`，不直接安装覆盖自身、不手改profile。设计见[自身升级](<SELF_UPDATE.md>)，试验方法见[GitHub隔离验证](<https://github.com/elaina-agi/dsh-plugin-update-doctor/blob/main/experiments/GITHUB_SELF_UPDATE_PROOF.md>)。
+
+- 离线回归覆盖固定仓库来源、main发现与完整commit绑定、Git tree/blob摘要、Git打包／锁文件／脚本控制、原文件核验、票据复查、分层结果及旧记录兼容。31项Git预检专项全部通过；完整回归 **191项通过、14项私有证据测试明确跳过、0失败**，总计205项。JS语法与差异空白检查通过。
+- 实际隔离宿主成功组载入新提交、新代码可调用且Host active；失败组目标安装exit0但故意加载失败，官方恢复旧提交applied，恢复文件／来源／Host通过，升级仍为失败。两组保持管理器fiber和同PID，旧disposer不等待自身安装；自有根及listener已清理。
+- GitHub接口与传输为显式fixture：由真实生成Git对象供给fixed逻辑GitHub API/raw数据；public installBundle适配器仅转换自有Git传输及该失败target来源身份，原状态／诊断结果单独保留，public updateBundle执行、包命令、生命周期与官方恢复均未替换。测试旧0.4.1复制当前代码，不能声称真实旧版已具备新功能。任务为0，无浏览器点击／模型／真实profile变更。一次重复成功组因旧fixture没有映射失败本地spec而被白名单保留为unknown；底层安装原因未完整捕获，新增原结果捕获／身份映射后复验通过，不将重跑当作修复底层故障。
+- 另对公开旧提交9f6160c进行只读原文件预检：35项安装资源匹配，Git tree为 `d122bbf60f19d212b8552b178429b1f0f56ba9f8`，41个有界请求读取421016字节；三个打包控制文件通过。首次真实HTTP检查暴露小文件gzip wire Content-Length大于decoded大小的兼容缺陷；修复仅对identity响应使用该头提前拦截，解压后的流仍有精确上限，并新增gzip/br回归；真实复验通过。此项不是目标安装、全面兼容或浏览器证据。
+- 中文确认框直接展示非签名Release、现有依赖源、非原子替换及安装／恢复都可能失败，并使用Git专属确认；完整新旧SHA、来源／包／Host／页面同步与恢复结果分开。UI/UX源码复核通过；**未验收v0.5.0真实DOM、深浅主题、键盘或窄屏行为**。
+- 当前已安装v0.4.1未被开发代码改动；没有npm发布、live升级、用户任务取消、WSL修改或私有结果上传。首次迁移到v0.5.0需由用户通过官方管理器安装固定提交，之后更高正式版本才能使用此路径。
 
 ## 首屏渲染修复（2026-11-20）
 

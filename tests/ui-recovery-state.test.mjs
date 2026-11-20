@@ -71,13 +71,26 @@ test('package, Host and current page state stay separate and missing verificatio
     assert(!code.includes("require('@deepseek-ai/dsh-client-ui-primitives')"));
 });
 
-test('source refusal labels, bounded progress and v0.4.1 retain Host theme presentation', () => {
+test('GitHub self confirmation shows complete pins, sends offered commit only and keeps verification separate', () => {
+    const prepare = section('      const prepare =', '      const prepareRestore =');
+    assert(prepare.includes('commit: selfSelected.latestCommit')); assert(!/\b(?:spec|url|repository)\s*:/.test(prepare));
+    const commitDetails = section('    function CommitDetails(', '    function Verification(');
+    assert(commitDetails.includes("'pud-github-commits'")); assert(commitDetails.includes('value.fromCommit ?? value.currentCommit')); assert(commitDetails.includes('value.toCommit ?? value.latestCommit')); assert(!commitDetails.includes('slice('));
+    const dialog = section('    function ConfirmDialog(', '    class PanelBoundary');
+    assert(dialog.includes('h(CommitDetails, { value: item, t })'));
+    assert(dialog.includes("'data-testid': 'pud-github-safety'")); assert(dialog.includes("t('githubConfirmSafety')")); assert(dialog.includes("githubUpdating ? t('acknowledgeGithubSelf')"));
+    assert(code.includes("prefix: 'sourceCheck'")); assert(code.includes('h(CommitDetails, { value: selfState.attempt, t })'));
+    assert(code.includes('GitHub main HEAD · not a release')); assert(code.includes('GitHub 主分支 HEAD · 非 Release'));
+    assert(code.includes("useLocale(selectLocale)")); assert(code.includes("useClientSync(selectClientSync)"));
+});
+
+test('source refusal labels, bounded progress and v0.5.0 retain Host theme presentation', () => {
     for (const reason of ['registry-origin-unsupported', 'registry-origin-unverified', 'source-identity-unverified', 'recovery-source-changed', 'recovery-archive-unavailable', 'state-changed']) assert(code.includes(`'reason.${reason}'`));
     for (const status of ['restored', 'recovery-required']) assert(code.includes(`'status.${status}'`));
     assert(code.includes('const installProgress = operation?.installProgress'));
     assert(code.includes('const logChunks = boundedLogs('));
     assert(code.includes('raw.length > 24000'));
-    assert(code.includes("'v0.4.1'"));
+    assert(code.includes("'v0.5.0'"));
     assert(code.includes('new formal steps wait'));
     assert(code.includes('不冻结智能体创建、提示／工具组装、维护操作'));
     assert(code.includes('--dsw-alias-label-primary-foreground'));

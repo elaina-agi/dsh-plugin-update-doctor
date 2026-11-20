@@ -242,6 +242,50 @@ window.__ModuleLoader__.load({
       'reason.self-update-handoff-unavailable': '当前宿主未提供所需的独立更新接口。',
       'reason.self-update-separate-confirmation': '更新器需与普通插件批次分开勾选确认。'
     });
+    Object.assign(EN, {
+      sourcePublicOnly: 'Ordinary updates use verified public npm origins. This updater also supports its fixed public GitHub repository at a full commit; sources are never silently migrated.',
+      githubHead: 'GitHub main HEAD · not a release', githubHeadHelp: 'The version is read from the main branch. Confirmation pins the full commit below; same-version commits and arbitrary repositories are not offered.',
+      githubRepository: 'Fixed GitHub repository', fromCommit: 'Previous-version commit', toCommit: 'Target commit', sourceVerification: 'Source commit verification',
+      githubConfirmSafety: 'This target is main HEAD, not a signed GitHub release. The full commit shown above is pinned, but the Host downloads it again. Dependencies follow your current Host registry settings; this is not an atomic replacement. Installation and recovery can both fail, so keep the official manager available.',
+      acknowledgeGithubSelf: 'I reviewed the fixed repository and full target commit. I understand the main-branch, dependency-source and recovery risks, that the old task gate ends at unload, and missing final evidence remains unknown.',
+      'sourceCheck.verified': 'Expected source commit verified', 'sourceCheck.failed': 'Source commit mismatch', 'sourceCheck.unknown': 'Source commit unknown',
+      'reason.self-update-registry-required': 'Self-update requires a registry install or this repository pinned to a full commit. Local links and unpinned Git sources are not migrated.',
+      'reason.self-github-source-unsupported': 'Only this updater’s fixed public GitHub repository at a full commit is supported. Reinstall a pinned version through the official manager.',
+      'reason.self-github-no-newer-version': 'The main branch has no higher stable package version.',
+      'reason.self-github-network': 'GitHub cannot be read. Check network access and retry the check; no update was started.',
+      'reason.self-github-rate-limited': 'GitHub refused this unauthenticated check. Wait and retry; no token is requested or stored.',
+      'reason.self-github-tree-unsupported': 'The commit contains unsupported files or Git tree modes; use the official manager after review.',
+      'reason.self-github-pack-policy-unsupported': 'Git packaging or dependency controls changed; independent review is required.',
+      'reason.self-github-object-mismatch': 'GitHub object hashes could not be verified; no update is allowed.',
+      'reason.self-installed-original-unverified': 'Installed files do not match the original package or fixed GitHub commit; self-update is refused.'
+    });
+    Object.assign(ZH, {
+      sourcePublicOnly: '普通更新使用已核验的公共 npm 来源；更新器另支持自身固定公开 GitHub 仓库的完整提交，不会静默迁移来源。',
+      githubHead: 'GitHub 主分支 HEAD · 非 Release', githubHeadHelp: '版本读取自主分支；确认绑定下方完整提交号，不提供同版本提交或任意仓库更新。',
+      githubRepository: '固定 GitHub 仓库', fromCommit: '原版本提交', toCommit: '目标提交', sourceVerification: '来源提交核验',
+      githubConfirmSafety: '目标来自主分支 HEAD，不是签名 GitHub Release。上方所示完整提交已绑定，但宿主会再次下载；依赖沿用当前宿主安装源，并非原子替换。安装和旧提交恢复均可能失败，请保留官方管理器作为处理入口。',
+      acknowledgeGithubSelf: '我已核对固定仓库和完整目标提交，理解主分支、依赖来源及恢复风险；旧门禁在卸载时结束，缺失的最终结果仍为未知。',
+      'sourceCheck.verified': '预期来源提交已核验', 'sourceCheck.failed': '来源提交不符', 'sourceCheck.unknown': '来源提交未知',
+      'reason.self-update-registry-required': '自身升级需要安装源包，或此仓库固定完整提交的安装；不迁移本地链接和未固定的 Git 来源。',
+      'reason.self-github-source-unsupported': '仅支持更新器固定公开仓库的完整提交；请通过官方管理器安装固定提交版本。',
+      'reason.self-github-no-newer-version': '主分支没有更高的正式包版本。',
+      'reason.self-github-network': '无法读取 GitHub，请检查网络后重试检查；尚未开始更新。',
+      'reason.self-github-rate-limited': 'GitHub 拒绝了此次无凭据查询，请稍后再试；不会索取或保存令牌。',
+      'reason.self-github-tree-unsupported': '提交含不支持的文件或 Git 类型，需审查后由官方管理器处理。',
+      'reason.self-github-pack-policy-unsupported': 'Git 打包或依赖控制发生变化，需要独立审查。',
+      'reason.self-github-object-mismatch': '无法核验 GitHub 对象摘要，禁止更新。',
+      'reason.self-installed-original-unverified': '已安装文件与原包或固定 GitHub 提交不一致，已阻止自身升级。'
+    });
+    const githubReasonAliases = {
+      'self-github-tree-mode-unsupported': 'self-github-tree-unsupported', 'self-github-tree-path-unsupported': 'self-github-tree-unsupported',
+      'self-github-tree-size-unsupported': 'self-github-tree-unsupported', 'self-github-tree-invalid': 'self-github-tree-unsupported',
+      'self-github-tree-parent-invalid': 'self-github-tree-unsupported', 'self-github-pack-control-unsupported': 'self-github-pack-policy-unsupported',
+      'self-github-files-policy-unsupported': 'self-github-pack-policy-unsupported', 'self-github-lock-policy-unsupported': 'self-github-pack-policy-unsupported',
+      'self-github-pack-controls-changed': 'self-github-pack-policy-unsupported', 'self-github-tree-hash-mismatch': 'self-github-object-mismatch',
+      'self-github-blob-hash-mismatch': 'self-github-object-mismatch', 'self-github-commit-mismatch': 'self-github-object-mismatch',
+      'self-github-response-origin-unsupported': 'self-github-object-mismatch', 'self-github-response-unavailable': 'self-github-network'
+    };
+    for (const [reason, alias] of Object.entries(githubReasonAliases)) { EN['reason.' + reason] = EN['reason.' + alias]; ZH['reason.' + reason] = ZH['reason.' + alias]; }
     const CSS = `
 .pud-page{height:100%;box-sizing:border-box;overflow:auto;position:relative;padding:28px clamp(18px,4vw,48px) 48px;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base);font-family:inherit;font-size:13px;line-height:1.55}.pud-wrap{max-width:1120px;margin:0 auto}.pud-header,.pud-toolbar,.pud-inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pud-header{justify-content:space-between;align-items:flex-start;margin-bottom:20px}.pud-header h1{font-size:22px;line-height:1.4;font-weight:600;margin:0}.pud-muted{color:var(--dsw-alias-label-secondary)}.pud-subtitle{margin:6px 0 0;max-width:780px}.pud-meta{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 0;font-size:12px}.pud-card{padding:18px;border:1px solid var(--dsw-alias-border-l3);border-radius:12px;background:var(--dsw-alias-bg-layer-1);margin:16px 0;min-width:0}.pud-card h2{font-size:15px;font-weight:600;margin:0 0 12px}.pud-card h3{font-size:13px;font-weight:600;margin:14px 0 7px}.pud-btn{min-height:34px;display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;gap:7px;border:1px solid var(--dsw-alias-border-l3);border-radius:7px;background:var(--dsw-alias-button-elevated-fill);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;transition:background-color .16s,color .16s}.pud-btn-primary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);border-color:var(--dsw-alias-button-primary-fill)}.pud-btn:disabled{opacity:1;cursor:not-allowed;background:var(--dsw-alias-button-primary-dimmed);color:var(--dsw-alias-label-secondary);border-color:var(--dsw-alias-border-l3)}.pud-btn[aria-busy=true]{cursor:progress}.pud-btn:focus-visible,.pud-record summary:focus-visible,.pud-check:focus-visible,.pud-json:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}.pud-btn-compact{padding:4px 8px;min-height:28px;font-size:12px}
 .pud-note{padding:12px 14px;border:1px solid var(--dsw-alias-border-l3);border-radius:8px;background:var(--dsw-alias-card-fill);margin:12px 0;overflow-wrap:anywhere}.pud-error{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary)}.pud-warning{border-color:var(--dsw-alias-state-warn-primary)}.pud-status{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;border:1px solid var(--dsw-alias-border-l3);font-size:12px;background:var(--dsw-alias-bg-module-platform);white-space:nowrap}.pud-status[data-state=active],.pud-status[data-state=applied],.pud-status[data-state=updated],.pud-status[data-state=restored],.pud-status[data-state=verified],.pud-status[data-state=up-to-date]{color:var(--dsw-alias-state-success-primary)}.pud-status[data-state=failed],.pud-status[data-state=error],.pud-status[data-state=missing]{color:var(--dsw-alias-state-error-primary)}.pud-status[data-state=blocked],.pud-status[data-state=recovery-required],.pud-status[data-state=unknown],.pud-status[data-state=restart-required],.pud-status[data-state=waiting]{color:var(--dsw-alias-state-warn-label)}.pud-definition{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 14px;margin:0}.pud-definition dt{color:var(--dsw-alias-label-secondary)}.pud-definition dd{margin:0;overflow-wrap:anywhere}.pud-break{overflow-wrap:anywhere;word-break:break-word}.pud-list{margin:7px 0;padding-left:22px}.pud-table-wrap{overflow:auto;max-height:460px}.pud-table{border-collapse:collapse;width:100%;font:inherit;font-size:12px;min-width:620px}.pud-table th,.pud-table td{text-align:left;padding:10px 9px;border-bottom:1px solid var(--dsw-alias-border-l2);vertical-align:top}.pud-table th{color:var(--dsw-alias-label-secondary);font-weight:500;white-space:nowrap;background:var(--dsw-alias-bg-layer-1);position:sticky;top:0;z-index:1}.pud-table td:first-child{width:28px}.pud-table .pud-package-cell{min-width:170px;max-width:300px}.pud-table tr[data-open=true]{background:var(--dsw-alias-interactive-bg-hover-solid)}.pud-check{accent-color:var(--dsw-alias-state-business-primary);width:16px;height:16px;cursor:pointer;margin:3px 0;flex:none}.pud-check:disabled{cursor:not-allowed}.pud-json{background:var(--dsw-alias-bg-module-platform);border-radius:7px;padding:12px;max-height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--dsw-alias-label-secondary);margin:10px 0 0}.pud-record{padding:12px 0;border-top:1px solid var(--dsw-alias-border-l2)}.pud-record summary{cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:28px}.pud-record-heading{font-weight:500}.pud-small{font-size:12px}.pud-footer{justify-content:space-between;margin-top:14px}.pud-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.pud-detail-head h2{margin:0}.pud-spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--dsw-alias-border-l3);border-top-color:var(--dsw-alias-label-secondary);border-radius:50%;animation:pud-spin 1s linear infinite}@keyframes pud-spin{to{transform:rotate(360deg)}}
@@ -319,12 +363,22 @@ window.__ModuleLoader__.load({
       const date = new Date(value); if (!Number.isFinite(date.valueOf())) return t('noValue');
       try { return date.toLocaleString(string(locale) || 'en'); } catch { return date.toLocaleString('en'); }
     }
+    function CommitDetails({ value, t }) {
+      if (!value || value.sourceKind !== 'git') return null;
+      return h('div', { className: 'pud-note pud-small', 'data-testid': 'pud-github-commits' },
+        h('strong', null, t('githubHead')), h('p', { className: 'pud-muted' }, t('githubHeadHelp')),
+        h('dl', { className: 'pud-definition' },
+          h('dt', null, t('githubRepository')), h('dd', null, string(value.repository)),
+          h('dt', null, t('fromCommit')), h('dd', null, string(value.fromCommit ?? value.currentCommit) || t('noValue')),
+          h('dt', null, t('toCommit')), h('dd', null, string(value.toCommit ?? value.latestCommit) || t('noValue'))));
+    }
     function Verification({ verification, t }) {
       const pack = verification?.package, host = verification?.host;
       return h('dl', { className: 'pud-definition pud-small' },
         h('dt', null, t('packageVerification')), h('dd', null, h(Badge, { value: string(pack?.status) || 'unknown', prefix: 'package', t }), pack?.version ? h('span', null, ' · ', pack.version) : null),
         h('dt', null, t('hostVerification')), h('dd', null, h(Badge, { value: string(host?.status) || 'unknown', prefix: 'host', t }),
-          typeof host?.activeRows === 'number' && typeof host?.totalRows === 'number' ? h('span', null, ' · ', host.activeRows + ' / ' + host.totalRows) : null));
+          typeof host?.activeRows === 'number' && typeof host?.totalRows === 'number' ? h('span', null, ' · ', host.activeRows + ' / ' + host.totalRows) : null),
+        verification?.source ? h(React.Fragment, null, h('dt', null, t('sourceVerification')), h('dd', null, h(Badge, { value: string(verification.source.status) || 'unknown', prefix: 'sourceCheck', t }))) : null);
     }
     function ClientSync({ state, retryClient, t }) {
       const failures = array(state?.failures), [retrying, setRetrying] = useState(false), [retryError, setRetryError] = useState('');
@@ -372,6 +426,7 @@ window.__ModuleLoader__.load({
     }
     function ConfirmDialog({ plan, t, locale, onCancel, onConfirm }) {
       const restoring = isRestore(plan.operation), selfUpdating = isSelf(plan.operation);
+      const githubUpdating = selfUpdating && array(plan.items).some(item => item.sourceKind === 'git');
       const ref = useRef(null), cancel = useRef(null); const [ack, setAck] = useState(false), [now, setNow] = useState(Date.now());
       const [taskPolicy, setTaskPolicy] = useState('wait-for-idle'), [confirmCancel, setConfirmCancel] = useState(false);
       useEffect(() => {
@@ -384,6 +439,7 @@ window.__ModuleLoader__.load({
       const reviewItems = array(plan.items).map((item, i) => h('li', { key: string(item.name) || i },
         h('strong', { className: 'pud-break' }, item.name),
         h('div', { className: 'pud-muted' }, valueOf(item.from, t('noValue')), ' → ', valueOf(item.to, t('noValue'))),
+        selfUpdating ? h(CommitDetails, { value: item, t }) : null,
         item.highImpact || array(item.infoWarnings).length || array(item.reasons).includes('high-impact') ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null));
       const warningDetails = array(plan.warnings).length ? h('details', { className: 'pud-small' },
         h('summary', null, t('detail')), h('ul', { className: 'pud-list' }, ...plan.warnings.map((text, i) => h('li', { key: i }, string(text))))) : null;
@@ -405,6 +461,7 @@ window.__ModuleLoader__.load({
         h('dt', null, t('taskPolicy')), h('dd', null, t(taskPolicy === 'cancel-active' ? 'stopPolicy' : 'waitPolicy')),
         h('dt', null, t('expires')), h('dd', null, dateText(plan.expiresAt, locale, t))),
       h('ul', { className: 'pud-dialog-list', 'aria-label': t(restoring ? 'restoreResults' : 'batchResults') }, ...reviewItems),
+      githubUpdating ? h('p', { className: 'pud-note pud-warning', 'data-testid': 'pud-github-safety' }, t('githubConfirmSafety')) : null,
       h('fieldset', { className: 'pud-policy' }, h('legend', null, t('taskPolicy')),
         h('label', { className: 'pud-policy-choice' }, h('input', { type: 'radio', name: 'pud-task-policy', value: 'wait-for-idle', checked: taskPolicy === 'wait-for-idle', onChange: () => { setTaskPolicy('wait-for-idle'); setConfirmCancel(false); } }),
           h('span', null, t('waitPolicy'), h('small', null, t(selfUpdating ? 'selfGateHelp' : 'waitPolicyHelp')))),
@@ -416,7 +473,7 @@ window.__ModuleLoader__.load({
       h('p', { className: 'pud-note pud-warning' }, t(selfUpdating ? 'selfGateHelp' : 'confirmSafety')), warningDetails,
       h('label', { className: 'pud-ack' },
         h('input', { type: 'checkbox', className: 'pud-check', checked: ack, onChange: event => setAck(event.target.checked) }),
-        h('span', null, selfUpdating ? t('acknowledgeSelf') : t(restoring ? 'acknowledgeRestore' : 'acknowledge'))),
+        h('span', null, githubUpdating ? t('acknowledgeGithubSelf') : selfUpdating ? t('acknowledgeSelf') : t(restoring ? 'acknowledgeRestore' : 'acknowledge'))),
       expired ? h('p', { className: 'pud-error', role: 'alert' }, t('expired')) : null,
       h('div', { className: 'pud-dialog-actions' },
         h('button', { ref: cancel, type: 'button', className: 'pud-btn', onClick: onCancel }, t('cancel')),
@@ -528,7 +585,7 @@ window.__ModuleLoader__.load({
           const selfSelected = selected.find(item => item.mode === 'host-self-update');
           if (selfSelected && selected.length !== 1) { setError({ code: 'self-update-separate-confirmation', diagnostic: t('selfHelp') }); return; }
           const answer = selfSelected
-            ? await read('prepare-self-update', { version: selfSelected.latestVersion }, 'POST', 180000)
+            ? await read('prepare-self-update', { version: selfSelected.latestVersion, ...(selfSelected.sourceKind === 'git' ? { commit: selfSelected.latestCommit } : {}) }, 'POST', 180000)
             : await read('prepare-batch', { items: selected.map(item => ({ name: item.name, version: item.latestVersion })) }, 'POST', 180000);
           if (!mounted.current) return;
           if (typeof answer.ticket === 'string' && !answer.blocked && array(answer.items).length) setPlan(answer);
@@ -597,6 +654,7 @@ window.__ModuleLoader__.load({
           h('td', null, valueOf(item.version, t('noValue'))), h('td', null, valueOf(item.latestVersion, t(scanResult ? 'noValue' : 'notChecked'))),
           h('td', null, h(Badge, { value: string(item.status) || 'not-checked', t }),
             item.mode === 'host-self-update' ? h('p', { className: 'pud-impact pud-small' }, t('selfMode'), ' · ', t('selfHelp')) : null,
+            item.mode === 'host-self-update' && item.sourceKind === 'git' ? h('details', { className: 'pud-small' }, h('summary', null, t('githubHead')), h(CommitDetails, { value: item, t })) : null,
             item.highImpact || array(item.infoWarnings).length || array(item.reasons).includes('high-impact') ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null, reasons),
           h('td', null, h('div', { className: 'pud-inline' }, h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: !!pending,
             onClick: () => setOpenName(current => current === item.name ? '' : item.name), 'aria-expanded': openName === item.name }, t('diagnosis')),
@@ -681,13 +739,14 @@ window.__ModuleLoader__.load({
         h('p', { className: 'pud-muted pud-small' }, t('selfContinuing')),
         h('p', { className: 'pud-note pud-warning' }, t('selfGateHelp')),
         selfState.attempt ? h('p', null, valueOf(selfState.attempt.from, t('noValue')), ' → ', valueOf(selfState.attempt.to, t('noValue'))) : null,
+        h(CommitDetails, { value: selfState.attempt, t }),
         h(Verification, { verification: selfState.verification, t }),
         selfState.result?.restore ? h('div', { className: 'pud-note' }, t('recoveryOutcome'), ' · ', h(Badge, { value: string(selfState.result.restore.application) || 'unknown', prefix: 'outcome', t }), h(Verification, { verification: selfState.restoreVerification, t })) : null,
         selfState.warning ? h('p', { className: 'pud-warning' }, t('selfUnknown')) : null,
         selfState.phase === 'waiting' ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending, onClick: () => { void cancelSelfWait(); } }, t('cancelWait')) : null,
         h('details', null, h('summary', null, t('detail')), h(SourceDetails, { value: selfState, t }))) : null;
       const header = h('header', { className: 'pud-header' },
-        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.4.1')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
+        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.5.0')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
           h('div', { className: 'pud-meta pud-muted' }, h('span', null, t('profile') + ': ', valueOf(snapshot?.profile, t('noValue'))), h('span', null, t('runtime') + ': ', valueOf(snapshot?.runtimeVersion, t('noValue'))))),
         h('div', { className: 'pud-toolbar' },
           h('button', { type: 'button', className: 'pud-btn', disabled: !!pending, onClick: () => { void refresh(); }, 'data-testid': 'pud-refresh' }, t('refresh')),

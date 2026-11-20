@@ -3,6 +3,7 @@ import { realpath, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { SelfUpdateCoordinator } from './lib/self-update.js';
 import { SelfUpdatePreflight } from './lib/self-update-policy.js';
+import { GithubSelfUpdatePreflight } from './lib/self-update-github.js';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { getDshRuntimeVersion, resolveBundleDir, evaluatePluginCompatibility } from '@deepseek-ai/dsh-app-boot';
 import { DoctorService } from './lib/service.js';
@@ -31,6 +32,7 @@ export async function apply(ctx) {
     await service.initialize();
     const selfUpdate = new SelfUpdateCoordinator({ manager, profile, taskGate,
         preflight: new SelfUpdatePreflight({ compatibility: manifest => evaluatePluginCompatibility(manifest, {}) }),
+        githubPreflight: new GithubSelfUpdatePreflight({ compatibility: manifest => evaluatePluginCompatibility(manifest, {}) }),
         resolvePackage: async packageName => realpath(resolveBundleDir('dsh', packageName, profile.installAnchor, profile.dir)),
         resolveYamlVersion: async () => {
             const directory = await realpath(resolveBundleDir('dsh', 'dsh-plugin-update-doctor', profile.installAnchor, profile.dir));

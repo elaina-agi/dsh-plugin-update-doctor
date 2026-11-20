@@ -71,13 +71,13 @@ test('package, Host and current page state stay separate and missing verificatio
     assert(!code.includes("require('@deepseek-ai/dsh-client-ui-primitives')"));
 });
 
-test('source refusal labels, bounded progress and v0.4.0 retain Host theme presentation', () => {
+test('source refusal labels, bounded progress and v0.4.1 retain Host theme presentation', () => {
     for (const reason of ['registry-origin-unsupported', 'registry-origin-unverified', 'source-identity-unverified', 'recovery-source-changed', 'recovery-archive-unavailable', 'state-changed']) assert(code.includes(`'reason.${reason}'`));
     for (const status of ['restored', 'recovery-required']) assert(code.includes(`'status.${status}'`));
     assert(code.includes('const installProgress = operation?.installProgress'));
     assert(code.includes('const logChunks = boundedLogs('));
     assert(code.includes('raw.length > 24000'));
-    assert(code.includes("'v0.4.0'"));
+    assert(code.includes("'v0.4.1'"));
     assert(code.includes('new formal steps wait'));
     assert(code.includes('不冻结智能体创建、提示／工具组装、维护操作'));
     assert(code.includes('--dsw-alias-label-primary-foreground'));

@@ -1,6 +1,14 @@
-# 验证状态（v0.4.0）
+# 验证状态（v0.4.1）
 
-## 本轮自更新交接（2026-11-20）
+## 首屏渲染修复（2026-11-20）
+
+用户在实际 GitHub 安装的 v0.4.0 面板看到本插件渲染保护提示。已安装客户端与仓库源码一致，缺陷是 `useLocale()` 和 `useClientSync()` 没有传入选择器。DSH 0.2.2-rc.5 实际 renderer 将这两个注入源绑定成必需接收 selector 的 Hook，因此首次读取就会抛错。
+
+v0.4.1 改为稳定的显式选择器 `useLocale(selectLocale)`／`useClientSync(selectClientSync)`，不手工订阅，不改宿主 API 或主题。新增测试直接求值实际客户端的选择器声明与调用片段；旧无参写法必须失败。另对安装版 renderer 内实际纯 `memoizedSelector` 片段验证：缺 selector 精确报 `TypeError: selector is not a function`，正确选择器返回语言和同步快照。该验证未执行 React／DOM，不是模拟或真实浏览器渲染验收。
+
+此前164项回归只覆盖静态声明和宿主生命周期，遗漏了 selector参数契约；其通过不能证明真实页面正常。修复后的干净源码测试 **152 项通过、14 项私有证据测试明确跳过、0 失败**，总计166项。实际renderer完整字节SHA256为 `6facb89754f0d21af91491a32646be87ff1b4a25891e44cce1732b02b0fe123b`；纯选择器片段647字节，SHA256为 `09aeeb2d1a69d8d4dd33c9f8cba84e0e4b8480a8bac47350cf1cb7b0addbb57e`。修复后的真实页面需用户重新安装 v0.4.1 并刷新验收。此次不直接修改已安装插件、不读取浏览器凭据、不改profile或WSL。
+
+## v0.4.0 自更新交接（2026-11-20）
 
 当前安装的 DSH Desktop 为 **0.2.2-rc.5 / Windows x64**。v0.4.0 新增独立的宿主自更新交接，详见[设计](<SELF_UPDATE.md>)和[真实隔离实验](<https://github.com/elaina-agi/dsh-plugin-update-doctor/blob/main/experiments/SELF_UPDATE_PROOF.md>)。
 

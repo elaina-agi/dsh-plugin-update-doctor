@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-update-doctor",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "author": "elaina-agi",
   "repository": { "type": "git", "url": "git+https://github.com/elaina-agi/dsh-plugin-update-doctor.git" },
@@ -18,7 +18,7 @@
   "files": ["index.js", "client.js", "lib", "native/win-x64/lock-probe.exe", "native/LockProbe.cs", "native/build.ps1", "locale", "docs", "icon.svg", "cordis.patch.yml", "README.md"],
   "scripts": { "test": "node --test tests/*.test.mjs", "check": "node --check index.js && node --check client.js" },
   "engines": { "node": ">=24.0.0", "dsh": ">=0.2.2-rc.3 <0.3.0" },
-  "dependencies": { "yaml": "^2.9.0" },
+  "dependencies": { "yaml": "2.9.1" },
   "peerDependencies": {
     "@deepseek-ai/dsh-tools": ">=0.2.2-rc.3 <0.3.0",
     "@deepseek-ai/dsh-app-boot": ">=0.2.2-rc.3 <0.3.0"

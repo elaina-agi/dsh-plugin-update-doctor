@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       yaml:
-        specifier: ^2.9.0
+        specifier: 2.9.1
         version: 2.9.1
 
 packages:

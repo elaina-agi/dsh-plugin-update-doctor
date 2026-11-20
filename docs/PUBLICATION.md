@@ -1,6 +1,6 @@
 # Publication and privacy notes
 
-This repository contains the v0.3.0 **public testing** source snapshot, under MIT. It is an independent third-party bundle, not an official DSH component. The verified Host is DSH Desktop 0.2.2-rc.3 on Windows x64.
+The initial public source snapshot was v0.3.0 under MIT. The v0.4.0 source adds a narrowly admitted self-update handoff and is shared through GitHub; uploading source does not publish its npm package. It is an independent third-party bundle, not an official DSH component. Self-update experiments use DSH Desktop 0.2.2-rc.5 on Windows x64; earlier update experiments use 0.2.2-rc.3.
 
 ## What is public
 

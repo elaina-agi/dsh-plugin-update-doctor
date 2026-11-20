@@ -198,6 +198,50 @@ window.__ModuleLoader__.load({
       stopPolicy: '替换前停止当前智能体任务', confirmSafety: '不会自动关闭或重启 DSH，停止任务必须额外同意。宿主加载、本页面同步和已有 WSL 会话代际是不同的观察结果。',
       runningDetail: '按确认的任务政策逐项替换。失败或需重启时停止后续项，记录的恢复有独立结果；暂缓新正式步骤，不保证全局冻结创建、提示组装、维护或外部 Worker。'
     });
+    Object.assign(EN, {
+      selfMode: 'Updater self-update · Host handoff', selfHelp: 'Select the updater separately. The official Host manager installs it and handles its own rollback; this panel may disappear and reload.',
+      selfGateHelp: 'Tasks are coordinated before handoff. When the old updater unloads its gate is released; new work is not frozen throughout Host replacement.',
+      confirmSelfTitle: 'Confirm updater self-update', confirmSelfImpact: 'Update this updater only. Installation and rollback are handed to the independent official Host manager, not the normal batch worker.',
+      acknowledgeSelf: 'I reviewed the version and understand that the old task gate ends at unload, and missing final evidence remains unknown.', selfWait: 'Confirm, wait for idle and hand off', selfStop: 'Confirm task stopping and hand off',
+      selfResult: 'Updater self-update evidence', selfHandedOff: 'Handed to the official Host manager', selfUnknown: 'Self-update result is unknown. Check installed state and the official manager; never automatically resend the update.',
+      selfContinuing: 'The old panel may unload. The independent Host operation continues; the new panel reads a separate bounded result receipt. DSH is not restarted automatically.',
+      'status.handed-off': 'Host handoff', 'phase.handed-off': 'Host handoff',
+      'reason.self-update-registry-required': 'Self-update requires a registry installation; linked or Git sources need independent updating.',
+      'reason.self-host-registry-plan-unsupported': 'The Host registry plan can fall through to another registry; self-update cannot preserve the strict public-source policy.',
+      'reason.self-yaml-dependency-unsupported': 'The target must pin the already verified yaml dependency version.',
+      'reason.self-registry-metadata-unavailable': 'The target or previous registry version is unavailable; Host recovery cannot be prechecked.',
+      'reason.self-update-outcome-unknown': 'A previous self-update has no final evidence; inspect the official manager before another update.',
+      'reason.self-update-public-origin-required': 'The version query answered from an unsupported registry. Use the official manager to review the source.',
+      'reason.self-query-origin-unverified': 'The public npm query origin could not be verified.',
+      'reason.self-yaml-version-unverified': 'The installed yaml dependency differs from the reviewed version; use the official manager.',
+      'reason.self-installed-original-unverified': 'Installed files do not match the original registry package; self-update is refused.',
+      'reason.self-update-host-not-active': 'The updater does not have its expected active Host row. Check official plugin state.',
+      'reason.self-runtime-graph-changed': 'The target changes Host requirements or its runtime graph; independent updating is required.',
+      'reason.self-update-handoff-unavailable': 'This Host does not provide the required independent update path.',
+      'reason.self-update-separate-confirmation': 'Select the updater separately from normal plugin batches.'
+    });
+    Object.assign(ZH, {
+      selfMode: '更新器自身升级 · 宿主交接', selfHelp: '请单独勾选更新器。安装和宿主自动恢复交给独立的官方管理器；旧面板可能消失后重新加载。',
+      selfGateHelp: '交接前协调当前任务；旧更新器卸载时释放门禁，不保证宿主替换全程暂缓新任务。',
+      confirmSelfTitle: '确认更新器自身升级', confirmSelfImpact: '此次只升级更新器。安装与恢复交给独立的官方宿主管理器，不走普通批次执行器。',
+      acknowledgeSelf: '我已核对版本，并理解旧任务门禁在卸载时结束，缺失的最终结果仍为未知。', selfWait: '确认、等待空闲并交给宿主', selfStop: '确认停止任务并交给宿主',
+      selfResult: '更新器自身升级证据', selfHandedOff: '已交给官方宿主管理器', selfUnknown: '自身升级结果未知，请核对安装状态及官方管理器；不会自动重发更新。',
+      selfContinuing: '旧面板可能卸载；独立宿主操作继续，新面板读取单独的有界结果记录。不会自动重启 DSH。',
+      'status.handed-off': '宿主交接', 'phase.handed-off': '宿主交接',
+      'reason.self-update-registry-required': '自身升级需要安装源包；Git 或本地链接仍需独立更新。',
+      'reason.self-host-registry-plan-unsupported': '宿主安装源计划可能转向其它来源，无法保持严格的公共 npm 来源政策。',
+      'reason.self-yaml-dependency-unsupported': '目标必须固定到当前已验证的 yaml 依赖版本。',
+      'reason.self-registry-metadata-unavailable': '目标或旧版在安装源中不可用，无法预检宿主恢复路径。',
+      'reason.self-update-outcome-unknown': '上次自身升级没有最终证据，请先核对官方管理器再更新。',
+      'reason.self-update-public-origin-required': '版本查询来自不支持的安装源，请在官方管理器核对来源。',
+      'reason.self-query-origin-unverified': '无法核验公共 npm 查询来源。',
+      'reason.self-yaml-version-unverified': '实际 yaml 依赖与已审查版本不同，请使用官方管理器。',
+      'reason.self-installed-original-unverified': '已安装文件与原始安装源包不一致，已阻止自身升级。',
+      'reason.self-update-host-not-active': '更新器未具有预期活跃宿主条目，请核对官方插件状态。',
+      'reason.self-runtime-graph-changed': '目标改变了宿主要求或运行图，需要独立更新。',
+      'reason.self-update-handoff-unavailable': '当前宿主未提供所需的独立更新接口。',
+      'reason.self-update-separate-confirmation': '更新器需与普通插件批次分开勾选确认。'
+    });
     const CSS = `
 .pud-page{height:100%;box-sizing:border-box;overflow:auto;position:relative;padding:28px clamp(18px,4vw,48px) 48px;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base);font-family:inherit;font-size:13px;line-height:1.55}.pud-wrap{max-width:1120px;margin:0 auto}.pud-header,.pud-toolbar,.pud-inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pud-header{justify-content:space-between;align-items:flex-start;margin-bottom:20px}.pud-header h1{font-size:22px;line-height:1.4;font-weight:600;margin:0}.pud-muted{color:var(--dsw-alias-label-secondary)}.pud-subtitle{margin:6px 0 0;max-width:780px}.pud-meta{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 0;font-size:12px}.pud-card{padding:18px;border:1px solid var(--dsw-alias-border-l3);border-radius:12px;background:var(--dsw-alias-bg-layer-1);margin:16px 0;min-width:0}.pud-card h2{font-size:15px;font-weight:600;margin:0 0 12px}.pud-card h3{font-size:13px;font-weight:600;margin:14px 0 7px}.pud-btn{min-height:34px;display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;gap:7px;border:1px solid var(--dsw-alias-border-l3);border-radius:7px;background:var(--dsw-alias-button-elevated-fill);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;transition:background-color .16s,color .16s}.pud-btn-primary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);border-color:var(--dsw-alias-button-primary-fill)}.pud-btn:disabled{opacity:1;cursor:not-allowed;background:var(--dsw-alias-button-primary-dimmed);color:var(--dsw-alias-label-secondary);border-color:var(--dsw-alias-border-l3)}.pud-btn[aria-busy=true]{cursor:progress}.pud-btn:focus-visible,.pud-record summary:focus-visible,.pud-check:focus-visible,.pud-json:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}.pud-btn-compact{padding:4px 8px;min-height:28px;font-size:12px}
 .pud-note{padding:12px 14px;border:1px solid var(--dsw-alias-border-l3);border-radius:8px;background:var(--dsw-alias-card-fill);margin:12px 0;overflow-wrap:anywhere}.pud-error{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary)}.pud-warning{border-color:var(--dsw-alias-state-warn-primary)}.pud-status{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;border:1px solid var(--dsw-alias-border-l3);font-size:12px;background:var(--dsw-alias-bg-module-platform);white-space:nowrap}.pud-status[data-state=active],.pud-status[data-state=applied],.pud-status[data-state=updated],.pud-status[data-state=restored],.pud-status[data-state=verified],.pud-status[data-state=up-to-date]{color:var(--dsw-alias-state-success-primary)}.pud-status[data-state=failed],.pud-status[data-state=error],.pud-status[data-state=missing]{color:var(--dsw-alias-state-error-primary)}.pud-status[data-state=blocked],.pud-status[data-state=recovery-required],.pud-status[data-state=unknown],.pud-status[data-state=restart-required],.pud-status[data-state=waiting]{color:var(--dsw-alias-state-warn-label)}.pud-definition{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 14px;margin:0}.pud-definition dt{color:var(--dsw-alias-label-secondary)}.pud-definition dd{margin:0;overflow-wrap:anywhere}.pud-break{overflow-wrap:anywhere;word-break:break-word}.pud-list{margin:7px 0;padding-left:22px}.pud-table-wrap{overflow:auto;max-height:460px}.pud-table{border-collapse:collapse;width:100%;font:inherit;font-size:12px;min-width:620px}.pud-table th,.pud-table td{text-align:left;padding:10px 9px;border-bottom:1px solid var(--dsw-alias-border-l2);vertical-align:top}.pud-table th{color:var(--dsw-alias-label-secondary);font-weight:500;white-space:nowrap;background:var(--dsw-alias-bg-layer-1);position:sticky;top:0;z-index:1}.pud-table td:first-child{width:28px}.pud-table .pud-package-cell{min-width:170px;max-width:300px}.pud-table tr[data-open=true]{background:var(--dsw-alias-interactive-bg-hover-solid)}.pud-check{accent-color:var(--dsw-alias-state-business-primary);width:16px;height:16px;cursor:pointer;margin:3px 0;flex:none}.pud-check:disabled{cursor:not-allowed}.pud-json{background:var(--dsw-alias-bg-module-platform);border-radius:7px;padding:12px;max-height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--dsw-alias-label-secondary);margin:10px 0 0}.pud-record{padding:12px 0;border-top:1px solid var(--dsw-alias-border-l2)}.pud-record summary{cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:28px}.pud-record-heading{font-weight:500}.pud-small{font-size:12px}.pud-footer{justify-content:space-between;margin-top:14px}.pud-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.pud-detail-head h2{margin:0}.pud-spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--dsw-alias-border-l3);border-top-color:var(--dsw-alias-label-secondary);border-radius:50%;animation:pud-spin 1s linear infinite}@keyframes pud-spin{to{transform:rotate(360deg)}}
@@ -220,6 +264,7 @@ window.__ModuleLoader__.load({
     };
     const eligible = item => item?.canUpdate === true && item.status === 'available' && !!string(item.latestVersion);
     const recoveryEligible = item => item?.canRestore === true && !!string(item.restoreVersion) && !!string(item.recoveryId);
+    const isSelf = operation => operation === 'host-self-update';
     const isRestore = operation => operation === 'batch-restore';
     const boundedText = (value, limit = 12000) => string(value).slice(-limit);
     const boundedLogs = value => array(value).slice(-60).map(chunk => ({ name: boundedText(chunk?.name, 200), stream: boundedText(chunk?.stream, 16), text: boundedText(chunk?.text, 1000) }));
@@ -326,7 +371,7 @@ window.__ModuleLoader__.load({
         h(Finding, { finding: record?.classification, t }), h(SourceDetails, { value: record, t }));
     }
     function ConfirmDialog({ plan, t, locale, onCancel, onConfirm }) {
-      const restoring = isRestore(plan.operation);
+      const restoring = isRestore(plan.operation), selfUpdating = isSelf(plan.operation);
       const ref = useRef(null), cancel = useRef(null); const [ack, setAck] = useState(false), [now, setNow] = useState(Date.now());
       const [taskPolicy, setTaskPolicy] = useState('wait-for-idle'), [confirmCancel, setConfirmCancel] = useState(false);
       useEffect(() => {
@@ -353,8 +398,8 @@ window.__ModuleLoader__.load({
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
         },
       },
-      h('h2', { id: 'pud-confirm-title' }, t(restoring ? 'confirmRestoreTitle' : 'confirmTitle')),
-      h('p', { id: 'pud-confirm-impact', className: 'pud-muted' }, t(restoring ? 'confirmRestoreImpact' : 'confirmImpact')),
+      h('h2', { id: 'pud-confirm-title' }, selfUpdating ? t('confirmSelfTitle') : t(restoring ? 'confirmRestoreTitle' : 'confirmTitle')),
+      h('p', { id: 'pud-confirm-impact', className: 'pud-muted' }, selfUpdating ? t('confirmSelfImpact') : t(restoring ? 'confirmRestoreImpact' : 'confirmImpact')),
       h('dl', { className: 'pud-definition' },
         h('dt', null, t('profile')), h('dd', null, valueOf(plan.profile, t('noValue'))),
         h('dt', null, t('taskPolicy')), h('dd', null, t(taskPolicy === 'cancel-active' ? 'stopPolicy' : 'waitPolicy')),
@@ -362,20 +407,20 @@ window.__ModuleLoader__.load({
       h('ul', { className: 'pud-dialog-list', 'aria-label': t(restoring ? 'restoreResults' : 'batchResults') }, ...reviewItems),
       h('fieldset', { className: 'pud-policy' }, h('legend', null, t('taskPolicy')),
         h('label', { className: 'pud-policy-choice' }, h('input', { type: 'radio', name: 'pud-task-policy', value: 'wait-for-idle', checked: taskPolicy === 'wait-for-idle', onChange: () => { setTaskPolicy('wait-for-idle'); setConfirmCancel(false); } }),
-          h('span', null, t('waitPolicy'), h('small', null, t('waitPolicyHelp')))),
+          h('span', null, t('waitPolicy'), h('small', null, t(selfUpdating ? 'selfGateHelp' : 'waitPolicyHelp')))),
         h('label', { className: 'pud-policy-choice' }, h('input', { type: 'radio', name: 'pud-task-policy', value: 'cancel-active', checked: taskPolicy === 'cancel-active', disabled: !array(plan.taskPolicies).includes('cancel-active'), onChange: () => { setTaskPolicy('cancel-active'); setConfirmCancel(false); } }),
           h('span', null, t('stopPolicy'), h('small', null, t('stopPolicyHelp'))))),
       taskPolicy === 'cancel-active' ? h('label', { className: 'pud-note pud-ack pud-stop-confirm' },
         h('input', { type: 'checkbox', className: 'pud-check', checked: confirmCancel, onChange: event => setConfirmCancel(event.target.checked), 'data-testid': 'pud-confirm-cancel' }),
         h('span', null, t('stopConsent'))) : null,
-      h('p', { className: 'pud-note pud-warning' }, t('confirmSafety')), warningDetails,
+      h('p', { className: 'pud-note pud-warning' }, t(selfUpdating ? 'selfGateHelp' : 'confirmSafety')), warningDetails,
       h('label', { className: 'pud-ack' },
         h('input', { type: 'checkbox', className: 'pud-check', checked: ack, onChange: event => setAck(event.target.checked) }),
-        h('span', null, t(restoring ? 'acknowledgeRestore' : 'acknowledge'))),
+        h('span', null, selfUpdating ? t('acknowledgeSelf') : t(restoring ? 'acknowledgeRestore' : 'acknowledge'))),
       expired ? h('p', { className: 'pud-error', role: 'alert' }, t('expired')) : null,
       h('div', { className: 'pud-dialog-actions' },
         h('button', { ref: cancel, type: 'button', className: 'pud-btn', onClick: onCancel }, t('cancel')),
-        h('button', { type: 'button', className: 'pud-btn pud-btn-primary', disabled: !ack || expired || !array(plan.items).length || (taskPolicy === 'cancel-active' && !confirmCancel), onClick: () => onConfirm({ taskPolicy, ...(taskPolicy === 'cancel-active' ? { confirmCancel: true } : {}) }) }, t(restoring ? taskPolicy === 'cancel-active' ? 'confirmRestoreStop' : 'confirmRestoreWait' : taskPolicy === 'cancel-active' ? 'confirmStop' : 'confirmWait'))));
+        h('button', { type: 'button', className: 'pud-btn pud-btn-primary', disabled: !ack || expired || !array(plan.items).length || (taskPolicy === 'cancel-active' && !confirmCancel), onClick: () => onConfirm({ taskPolicy, ...(taskPolicy === 'cancel-active' ? { confirmCancel: true } : {}) }) }, selfUpdating ? t(taskPolicy === 'cancel-active' ? 'selfStop' : 'selfWait') : t(restoring ? taskPolicy === 'cancel-active' ? 'confirmRestoreStop' : 'confirmRestoreWait' : taskPolicy === 'cancel-active' ? 'confirmStop' : 'confirmWait'))));
     }
     class PanelBoundary extends React.Component {
       constructor(props) { super(props); this.state = { failed: false }; }
@@ -389,6 +434,7 @@ window.__ModuleLoader__.load({
       const [openName, setOpenName] = useState(''), [diagnosis, setDiagnosis] = useState(null), [locks, setLocks] = useState(null);
       const [pending, setPending] = useState(''), [error, setError] = useState(null), [plan, setPlan] = useState(null);
       const [operationId, setOperationId] = useState(''), [operation, setOperation] = useState(null), [pollNotice, setPollNotice] = useState(''), [pollEpoch, setPollEpoch] = useState(0);
+      const [selfOperationId, setSelfOperationId] = useState(''), [selfState, setSelfState] = useState(null);
       const mounted = useRef(true), generation = useRef(0), requests = useRef(new Set()), openRef = useRef(openName); openRef.current = openName;
       useEffect(() => { mounted.current = true; return () => { mounted.current = false; for (const controller of requests.current) controller.abort(); }; }, []);
       const errorInfo = issue => ({ code: string(issue?.code), diagnostic: string(issue?.safeDiagnostic) });
@@ -398,7 +444,9 @@ window.__ModuleLoader__.load({
       }, []);
       const load = useCallback(async () => {
         const answer = await read('list'); if (!mounted.current) return;
-        setSnapshot(answer); const id = operationIdOf(answer.busy);
+        setSnapshot(answer); setSelfState(answer.selfUpdate ?? null);
+        if (answer.selfUpdate?.id && ['waiting', 'handed-off'].includes(answer.selfUpdate.phase)) setSelfOperationId(answer.selfUpdate.id);
+        const id = operationIdOf(answer.busy);
         if (id) { setOperationId(id); setPollNotice(''); }
       }, [read]);
       useEffect(() => { setPending('list'); load().catch(issue => { if (mounted.current) setError(errorInfo(issue)); }).finally(() => { if (mounted.current) setPending(''); }); }, [load]);
@@ -413,8 +461,11 @@ window.__ModuleLoader__.load({
       const byName = new Map(baseItems.map(item => [item.name, item]));
       const selected = baseItems.filter(item => checked.has(item.name) && eligible(item));
       const available = baseItems.filter(eligible);
+      const normalAvailable = available.filter(item => item.mode !== 'host-self-update');
       const currentPhase = operation?.phase ?? snapshot?.busy?.phase;
-      const busy = !!snapshot?.externalBusy || !!snapshot?.busy || !!operationId && !terminalPhase(operation?.phase);
+      const normalBusy = !!snapshot?.externalBusy || !!snapshot?.busy || !!operationId && !terminalPhase(operation?.phase);
+      const selfPending = !!selfState?.attempt && !selfState.result || !!selfState?.warning && !selfState.result;
+      const busy = normalBusy || selfPending;
       useEffect(() => {
         const revision = ++generation.current; setDiagnosis(null); setLocks(null);
         if (!openName) return;
@@ -445,6 +496,21 @@ window.__ModuleLoader__.load({
         };
         void poll(); return () => { alive = false; clearTimeout(timer); controller.abort(); };
       }, [operationId, pollEpoch, load]);
+      useEffect(() => {
+        if (!selfOperationId) return;
+        let alive = true, timer, failures = 0; const controller = new AbortController(), started = Date.now();
+        const poll = async () => {
+          if (Date.now() - started > 15 * 60 * 1000) { setSelfOperationId(''); setSelfState(current => ({ ...(current ?? {}), phase: 'unknown', warning: 'self-update-poll-limit' })); return; }
+          try {
+            const answer = await request('self-operation', { id: selfOperationId }, 'GET', controller.signal, 20000);
+            if (!alive) return;
+            setSelfState(answer); failures = 0;
+            if (!answer || terminalPhase(answer.phase)) { setSelfOperationId(''); await load(); return; }
+          } catch { if (!alive || controller.signal.aborted) return; if (++failures >= 3) { setSelfOperationId(''); setSelfState(current => ({ ...(current ?? {}), phase: 'unknown', warning: 'self-update-transport-lost' })); return; } }
+          if (alive) timer = setTimeout(poll, 1500);
+        };
+        void poll(); return () => { alive = false; clearTimeout(timer); controller.abort(); };
+      }, [selfOperationId, load]);
       const refresh = async () => {
         if (pending) return; setPending('list'); setError(null); setScanResult(null); setChecked(new Set()); setOpenName(''); setPlan(null); setPollEpoch(value => value + 1);
         try { await load(); } catch (issue) { if (mounted.current) setError(errorInfo(issue)); } finally { if (mounted.current) setPending(''); }
@@ -457,7 +523,11 @@ window.__ModuleLoader__.load({
       const prepare = async () => {
         if (pending || busy || !selected.length) return; setPending('prepare'); setError(null);
         try {
-          const answer = await read('prepare-batch', { items: selected.map(item => ({ name: item.name, version: item.latestVersion })) }, 'POST', 180000);
+          const selfSelected = selected.find(item => item.mode === 'host-self-update');
+          if (selfSelected && selected.length !== 1) { setError({ code: 'self-update-separate-confirmation', diagnostic: t('selfHelp') }); return; }
+          const answer = selfSelected
+            ? await read('prepare-self-update', { version: selfSelected.latestVersion }, 'POST', 180000)
+            : await read('prepare-batch', { items: selected.map(item => ({ name: item.name, version: item.latestVersion })) }, 'POST', 180000);
           if (!mounted.current) return;
           if (typeof answer.ticket === 'string' && !answer.blocked && array(answer.items).length) setPlan(answer);
           else setError({ code: 'state-changed', diagnostic: array(answer.reasons).join('; ') });
@@ -479,8 +549,17 @@ window.__ModuleLoader__.load({
           const answer = await read('commit', { ticket, taskPolicy, ...(taskPolicy === 'cancel-active' && confirmCancel === true ? { confirmCancel: true } : {}) }, 'POST', 45000);
           if (!mounted.current) return;
           if (typeof answer.operationId !== 'string') { setPollNotice('unknownOperation'); await load(); return; }
+          if (isSelf(answer.operation)) {
+            setSelfOperationId(answer.operationId); setSelfState({ id: answer.operationId, phase: 'waiting', result: null, attempt: { id: answer.operationId } }); setChecked(new Set()); return;
+          }
           setOperationId(answer.operationId); setChecked(new Set()); setSnapshot(current => ({ ...(current ?? {}), busy: { id: answer.operationId, phase: 'waiting' } }));
         } catch (issue) { if (mounted.current) { setError(errorInfo(issue)); await load().catch(() => {}); } } finally { if (mounted.current) setPending(''); }
+      };
+      const cancelSelfWait = async () => {
+        if (!selfState?.id || selfState.phase !== 'waiting' || pending) return;
+        setPending('cancel-wait');
+        try { await read('cancel-wait', { id: selfState.id }, 'POST', 45000); await load(); }
+        catch (issue) { setError(errorInfo(issue)); } finally { if (mounted.current) setPending(''); }
       };
       const cancelWait = async () => {
         const id = operationId || operationIdOf(snapshot?.busy); if (!id || pending || currentPhase !== 'waiting') return;
@@ -495,6 +574,8 @@ window.__ModuleLoader__.load({
       };
       const toggle = (item, enabled) => {
         if (!eligible(item) || pending || busy) return;
+        if (enabled && item.mode === 'host-self-update') { setChecked(new Set([item.name])); return; }
+        if (enabled && baseItems.some(candidate => candidate.mode === 'host-self-update' && checked.has(candidate.name))) { setChecked(new Set([item.name])); return; }
         if (enabled && !checked.has(item.name) && checked.size >= 20) { setError({ code: 'batch-limit', diagnostic: '' }); return; }
         setChecked(current => { const next = new Set(current); if (enabled) next.add(item.name); else next.delete(item.name); return next; });
       };
@@ -513,6 +594,7 @@ window.__ModuleLoader__.load({
           h('td', { className: 'pud-package-cell pud-break' }, h('strong', null, item.name)),
           h('td', null, valueOf(item.version, t('noValue'))), h('td', null, valueOf(item.latestVersion, t(scanResult ? 'noValue' : 'notChecked'))),
           h('td', null, h(Badge, { value: string(item.status) || 'not-checked', t }),
+            item.mode === 'host-self-update' ? h('p', { className: 'pud-impact pud-small' }, t('selfMode'), ' · ', t('selfHelp')) : null,
             item.highImpact || array(item.infoWarnings).length || array(item.reasons).includes('high-impact') ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null, reasons),
           h('td', null, h('div', { className: 'pud-inline' }, h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: !!pending,
             onClick: () => setOpenName(current => current === item.name ? '' : item.name), 'aria-expanded': openName === item.name }, t('diagnosis')),
@@ -524,8 +606,8 @@ window.__ModuleLoader__.load({
           h('tbody', null, ...pluginRows)));
       const footer = h('div', { className: 'pud-toolbar pud-footer' },
         h('div', { className: 'pud-inline' },
-          h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy || !available.length,
-            onClick: () => setChecked(new Set(available.slice(0, 20).map(item => item.name))), 'data-testid': 'pud-select-all' }, t(available.length > 20 ? 'selectFirstBatch' : 'selectAll')),
+          h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy || !normalAvailable.length,
+            onClick: () => setChecked(new Set(normalAvailable.slice(0, 20).map(item => item.name))), 'data-testid': 'pud-select-all' }, t(normalAvailable.length > 20 ? 'selectFirstBatch' : 'selectAll')),
           h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy || !checked.size,
             onClick: () => setChecked(new Set()), 'data-testid': 'pud-clear-selection' }, t('clearSelection')),
           h('span', { className: 'pud-muted pud-small', 'aria-live': 'polite' }, t('selectedCount') + ' ' + selected.length + ' · ' + t('availableCount') + ' ' + available.length)),
@@ -573,7 +655,7 @@ window.__ModuleLoader__.load({
       const logView = logChunks.length ? h('details', null, h('summary', null, t('logDetails')),
         h('p', { className: 'pud-muted pud-small' }, t('logBound')), h('pre', { className: 'pud-json', tabIndex: 0 },
           logChunks.map(chunk => [chunk.name, chunk.stream, chunk.text].filter(Boolean).join(' · ')).join('\n'))) : null;
-      const progress = busy || pollNotice ? h('section', { className: 'pud-card', 'aria-live': 'polite' },
+      const progress = !selfPending && normalBusy || pollNotice ? h('section', { className: 'pud-card', 'aria-live': 'polite' },
         h('h2', null, t(pollNotice || ['unknown','interrupted'].includes(currentPhase) ? 'progressUnknown' : snapshot?.externalBusy && !operationId ? 'externalBusy' : staging ? 'staging' : currentPhase === 'waiting' ? 'waiting' : recovering ? 'restoring' : 'running')),
         h('p', { className: 'pud-muted' }, t(pollNotice || ['unknown','interrupted'].includes(currentPhase) ? 'progressUnknownDetail' : staging ? 'stagingDetail' : currentPhase === 'waiting' ? 'waitingDetail' : 'runningDetail')),
         h('p', { className: 'pud-muted pud-small' }, t('continuing')),
@@ -590,8 +672,20 @@ window.__ModuleLoader__.load({
         terminalPhase(operation.phase) ? h('p', { className: 'pud-muted' }, t(operation.phase === 'finished' ? 'finishedDetail' : 'unknownOperation')) : null,
         operationItems.length ? h(BatchTable, { items: operationItems, t, onRestore: prepareRestore, busy: busy || !!pending, recoveries: currentItems }) : h('p', { className: 'pud-muted' }, t('noResults')),
         h('details', { className: 'pud-small', style: { marginTop: 12 } }, h('summary', null, t('detail')), h(SourceDetails, { value: operation, t }))) : null;
+      const selfOutcome = selfState?.result?.result?.application === 'applied' && !selfState.verifiedApplied ? 'unknown' : string(selfState?.result?.result?.application) || string(selfState?.result?.outcome) || 'unknown';
+      const selfView = selfState ? h('section', { className: 'pud-card', 'data-testid': 'pud-self-update', 'aria-live': 'polite' },
+        h('h2', null, t('selfResult')),
+        h('p', null, t(selfState.phase === 'handed-off' ? 'selfHandedOff' : selfState.phase === 'waiting' ? 'waiting' : selfState.phase === 'unknown' ? 'selfUnknown' : 'finished'), ' · ', h(Badge, { value: selfOutcome, prefix: 'outcome', t })),
+        h('p', { className: 'pud-muted pud-small' }, t('selfContinuing')),
+        h('p', { className: 'pud-note pud-warning' }, t('selfGateHelp')),
+        selfState.attempt ? h('p', null, valueOf(selfState.attempt.from, t('noValue')), ' → ', valueOf(selfState.attempt.to, t('noValue'))) : null,
+        h(Verification, { verification: selfState.verification, t }),
+        selfState.result?.restore ? h('div', { className: 'pud-note' }, t('recoveryOutcome'), ' · ', h(Badge, { value: string(selfState.result.restore.application) || 'unknown', prefix: 'outcome', t }), h(Verification, { verification: selfState.restoreVerification, t })) : null,
+        selfState.warning ? h('p', { className: 'pud-warning' }, t('selfUnknown')) : null,
+        selfState.phase === 'waiting' ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending, onClick: () => { void cancelSelfWait(); } }, t('cancelWait')) : null,
+        h('details', null, h('summary', null, t('detail')), h(SourceDetails, { value: selfState, t }))) : null;
       const header = h('header', { className: 'pud-header' },
-        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.3.0')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
+        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.4.0')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
           h('div', { className: 'pud-meta pud-muted' }, h('span', null, t('profile') + ': ', valueOf(snapshot?.profile, t('noValue'))), h('span', null, t('runtime') + ': ', valueOf(snapshot?.runtimeVersion, t('noValue'))))),
         h('div', { className: 'pud-toolbar' },
           h('button', { type: 'button', className: 'pud-btn', disabled: !!pending, onClick: () => { void refresh(); }, 'data-testid': 'pud-refresh' }, t('refresh')),
@@ -609,7 +703,7 @@ window.__ModuleLoader__.load({
           snapshot?.persistenceWarning ? h('div', { className: 'pud-note pud-warning', role: 'status' }, t('persistence') + ': ', string(snapshot.persistenceWarning)) : null,
            snapshot?.truncationWarning ? h('div', { className: 'pud-note pud-muted', role: 'status' }, t('historyTruncated')) : null,
           pending ? h('div', { className: 'pud-inline pud-muted', role: 'status', 'aria-live': 'polite' }, h('span', { className: 'pud-spinner', 'aria-hidden': true }), t(pending === 'scan' ? 'scanning' : pending === 'prepare-restore' ? 'reviewingRestore' : 'loading')) : null,
-          h(ClientSync, { state: clientSync, retryClient, t }), progress, results, mainList, detailView, history, limits),
+          h(ClientSync, { state: clientSync, retryClient, t }), selfView, progress, results, mainList, detailView, history, limits),
         plan ? h(ConfirmDialog, { plan, t, locale, onCancel: () => setPlan(null), onConfirm: policy => { void commit(policy); } }) : null);
     }
     return {

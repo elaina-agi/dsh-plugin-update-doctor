@@ -1,4 +1,8 @@
 import { join } from 'node:path';
+import { realpath, readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { SelfUpdateCoordinator } from './lib/self-update.js';
+import { SelfUpdatePreflight } from './lib/self-update-policy.js';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { getDshRuntimeVersion, resolveBundleDir, evaluatePluginCompatibility } from '@deepseek-ai/dsh-app-boot';
 import { DoctorService } from './lib/service.js';
@@ -16,19 +20,35 @@ export async function apply(ctx) {
     const stager = new RegistryStager(join(profile.home, 'cache', 'dsh-plugin-update-doctor', profile.name, 'staged'), {
         compatibility: manifest => evaluatePluginCompatibility(manifest, {}),
     });
+    // Use the public manager Service. Its updateBundle implementation owns package operations
+    // on the manager's providing context; teardown independence is verified by an isolated Host proof.
+    const manager = ctx.get('pluginManager');
     const service = new DoctorService({
-        manager: ctx.pluginManager, profile, runtimeVersion: getDshRuntimeVersion(),
+        manager, profile, runtimeVersion: getDshRuntimeVersion(),
         resolvePackage: async packageName => resolveBundleDir('dsh', packageName, profile.installAnchor, profile.dir),
         probeLocks, statePath: join(profile.home, 'cache', 'dsh-plugin-update-doctor', profile.name, 'history.json'), taskGate, stager,
     });
     await service.initialize();
+    const selfUpdate = new SelfUpdateCoordinator({ manager, profile, taskGate,
+        preflight: new SelfUpdatePreflight({ compatibility: manifest => evaluatePluginCompatibility(manifest, {}) }),
+        resolvePackage: async packageName => realpath(resolveBundleDir('dsh', packageName, profile.installAnchor, profile.dir)),
+        resolveYamlVersion: async () => {
+            const directory = await realpath(resolveBundleDir('dsh', 'dsh-plugin-update-doctor', profile.installAnchor, profile.dir));
+            const require = createRequire(join(directory, 'package.json'));
+            return JSON.parse(await readFile(require.resolve('yaml/package.json'), 'utf8')).version;
+        },
+        fingerprint: bundle => service.fingerprint(bundle), redact: service.redact,
+        storeRoot: join(profile.home, 'cache', 'dsh-plugin-update-doctor', profile.name, 'self-updates'),
+        unavailable: () => service.closed || !!service.busy || service.external.size > 0,
+    });
+    service.selfUpdate = selfUpdate;
     ctx.on('agent/status', payload => taskGate.observeStatus(payload));
     ctx.on('agent/pre-step', async (payload, next) => { await taskGate.beforeStep(payload); return next(); });
     ctx.on('plugin-manager/operation', value => service.observe(value));
     ctx.on('plugin-manager/update-state', value => service.onUpdateState(value));
     ctx.on('plugin-manager/install-state', value => service.onInstallProgress(value));
     ctx.on('plugin-manager/install-log', value => service.onInstallLog(value));
-    ctx.effect(() => async () => { taskGate.dispose(); await service.dispose(); }, 'plugin-update-doctor: history and operations');
+    ctx.effect(() => async () => { taskGate.dispose(); await selfUpdate.dispose(); await service.dispose(); }, 'plugin-update-doctor: history, self handoff and operations');
     ctx.inject(['connection'], scope => {
         scope.effect(() => scope.connection.fetch.register({
             path: ROUTE, methods: ['GET', 'POST'], requestBody: 'buffered', fetch: createHandler(service),

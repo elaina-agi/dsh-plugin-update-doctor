@@ -1,5 +1,12 @@
 # 验证状态（v0.5.0）
 
+## npm 公开发布核验（2026-11-21）
+
+- 用户另行执行 npm 发布；公开[版本接口](<https://registry.npmjs.org/dsh-plugin-update-doctor/0.5.0>)返回 `0.5.0`，[包元数据](<https://registry.npmjs.org/dsh-plugin-update-doctor>)中的 `latest` 指向 `0.5.0`。最初的“正在处理”状态已结束，实际[安装包](<https://registry.npmjs.org/dsh-plugin-update-doctor/-/dsh-plugin-update-doctor-0.5.0.tgz>)下载返回 HTTP 200。
+- 下载归档为 **122,671 字节**，SHA256 为 `e06a9b565aa38974b98db92ee83cf73146eed729aaef15a392c2603342babc15`，与发布前已审查归档一致；SHA1 和完整 SHA512 integrity 均与公开元数据相符。完整发布标识见[发布与隐私说明](<PUBLICATION.md>)。
+- 通过 DSH 官方插件管理器添加 `dsh-plugin-update-doctor@0.5.0` 即可使用 npm 来源。此核验是公共下载与归档一致性证据，**不是一次真实 npm 来源的 DSH 安装、未来自身升级或浏览器交互验收**。
+- 用户此前已通过官方管理器安装固定 GitHub 提交的 v0.5.0；npm 发布不改变现有来源。本次仅更新仓库文档，不修改用户 profile／已安装代码、不重新打包或覆盖已发布版本。发布归档中较早的“没有 npm 发布”文案是打包时状态，最新安装指引见[仓库 README](<https://github.com/elaina-agi/dsh-plugin-update-doctor#readme>)。
+
 ## GitHub 自身升级（2026-11-20）
 
 新增固定公开仓库／完整提交的独立自更新交接，沿用实际安装DSH **0.2.2-rc.5**公开Git `updateBundle`，不直接安装覆盖自身、不手改profile。设计见[自身升级](<SELF_UPDATE.md>)，试验方法见[GitHub隔离验证](<https://github.com/elaina-agi/dsh-plugin-update-doctor/blob/main/experiments/GITHUB_SELF_UPDATE_PROOF.md>)。
@@ -9,7 +16,7 @@
 - GitHub接口与传输为显式fixture：由真实生成Git对象供给fixed逻辑GitHub API/raw数据；public installBundle适配器仅转换自有Git传输及该失败target来源身份，原状态／诊断结果单独保留，public updateBundle执行、包命令、生命周期与官方恢复均未替换。测试旧0.4.1复制当前代码，不能声称真实旧版已具备新功能。任务为0，无浏览器点击／模型／真实profile变更。一次重复成功组因旧fixture没有映射失败本地spec而被白名单保留为unknown；底层安装原因未完整捕获，新增原结果捕获／身份映射后复验通过，不将重跑当作修复底层故障。
 - 另对公开旧提交9f6160c进行只读原文件预检：35项安装资源匹配，Git tree为 `d122bbf60f19d212b8552b178429b1f0f56ba9f8`，41个有界请求读取421016字节；三个打包控制文件通过。首次真实HTTP检查暴露小文件gzip wire Content-Length大于decoded大小的兼容缺陷；修复仅对identity响应使用该头提前拦截，解压后的流仍有精确上限，并新增gzip/br回归；真实复验通过。此项不是目标安装、全面兼容或浏览器证据。
 - 中文确认框直接展示非签名Release、现有依赖源、非原子替换及安装／恢复都可能失败，并使用Git专属确认；完整新旧SHA、来源／包／Host／页面同步与恢复结果分开。UI/UX源码复核通过；**未验收v0.5.0真实DOM、深浅主题、键盘或窄屏行为**。
-- 当前已安装v0.4.1未被开发代码改动；没有npm发布、live升级、用户任务取消、WSL修改或私有结果上传。首次迁移到v0.5.0需由用户通过官方管理器安装固定提交，之后更高正式版本才能使用此路径。
+- 在该轮开发验证时，用户已安装的v0.4.1未被开发代码改动；该轮没有npm发布、live升级、用户任务取消、WSL修改或私有结果上传。旧GitHub v0.4.1没有新增自更新入口，首次升级需由用户通过官方管理器完成；后续用户安装v0.5.0及npm公开发布状态见上方2026-11-21记录。只有符合来源与预检条件的更高正式版本才能使用对应自身升级路径。
 
 ## 首屏渲染修复（2026-11-20）
 

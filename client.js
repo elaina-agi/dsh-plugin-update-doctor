@@ -303,6 +303,14 @@ window.__ModuleLoader__.load({
       'reason.registry-handoff-unavailable':'The public Host exact-version registry update path is unavailable.',
       'reason.dependency-runtime-reload-unverified':'Safe no-restart updating is not supported on this stock Host path. This updater blocks the risk; it does not fix Host reload or automatically restart DSH.',
       'reason.identity-store-unverified':'Installation/recovery records cannot be verified. Stop management attempts and inspect the official manager; do not overwrite the records.',
+      unionGenerationSafety:'Union uses a reviewed complete-dependency generation archive while DSH stays open. The original code is preserved, but installation becomes a Doctor-owned local archive, not an npm installation; built-in Versions eligibility is not preserved. The plugin temporarily unloads and recovery may fail. Only reviewed exact versions are supported.',
+      acknowledgeUnionGeneration:'I accept the derived local generation source, temporary plugin unload, and separately verified recovery risk.',
+      'reason.union-version-not-reviewed':'This Union version pair has no reviewed complete-dependency generation path.',
+      'reason.union-generation-outcome-unknown':'The Union generation update or recovery has no verified final outcome; do not resend it.',
+      'reason.union-generation-confirmation-required':'The derived local Union generation source requires an additional acknowledgement.',
+      unionSourceVerification:'Derived local dependency generation source', 'unionSource.verified':'Local generation source verified; built-in Versions not preserved', 'unionSource.failed':'Local generation source not verified', 'unionSource.unknown':'Local generation source unknown',
+      unionRuntimeVerification:'Exact running dependency generation', 'runtime.verified':'Generation verified', 'runtime.unknown':'Running generation unverified', 'runtime.disabled':'Disabled; generation code not executed',
+      unionGenerationSource:'Doctor-owned local dependency generation · original npm bytes verified',
       registryHandoffSafety:'Normal npm updates preserve registry installation through the official Host updater. Prepared archives are preflight evidence: the Host downloads again using its existing fallback settings, and installation/rollback may fail. WSL generation packages remain local archives.'
     });
     Object.assign(ZH, {
@@ -332,6 +340,14 @@ window.__ModuleLoader__.load({
       'reason.registry-handoff-unavailable':'宿主公开的按精确版本 npm 更新路径不可用。',
       'reason.dependency-runtime-reload-unverified':'当前原版宿主的这条路径不支持安全无重启更新。本更新器只拦截风险，不修复宿主热加载，也不会自动重启 DSH。',
       'reason.identity-store-unverified':'安装／恢复记录无法核验，已停止管理操作；请核对官方管理器，不要覆盖未知记录。',
+      unionGenerationSafety:'Union 使用已审查的完整依赖代际归档，在 DSH 保持打开时替换。原始代码不改，但安装来源会变为更新器管理的本地归档，不再是 npm 安装，宿主内置 Versions 资格不保留。插件会短暂卸载，恢复也可能失败；只支持已审查的精确版本。',
+      acknowledgeUnionGeneration:'我接受完整依赖代际的本地归档来源、插件短暂卸载，以及分别核验的恢复风险。',
+      'reason.union-version-not-reviewed':'此 Union 版本组合尚未获得完整依赖代际更新准入。',
+      'reason.union-generation-outcome-unknown':'Union 代际更新或恢复没有已核验的最终结果，请勿重发。',
+      'reason.union-generation-confirmation-required':'Union 完整依赖代际的本地来源需要额外确认。',
+      unionSourceVerification:'完整依赖代际的本地来源核验', 'unionSource.verified':'本地代际来源已核验；内置 Versions 资格不保留', 'unionSource.failed':'本地代际来源未核验', 'unionSource.unknown':'本地代际来源未知',
+      unionRuntimeVerification:'实际运行的完整依赖代际', 'runtime.verified':'已核验运行代际', 'runtime.unknown':'运行代际未核验', 'runtime.disabled':'已停用；未执行代际代码',
+      unionGenerationSource:'更新器本地依赖代际 · 已核验原始 npm 字节',
       registryHandoffSafety:'普通 npm 更新通过官方管理器保留 npm 安装来源。准备的归档仅作预检证据，宿主会沿用现有 fallback 重新下载；安装和恢复均可能失败。WSL 代际包装仍使用本地归档。'
     });
     Object.assign(EN, {
@@ -484,7 +500,7 @@ window.__ModuleLoader__.load({
     };
     const informationWarnings = item => array(item?.infoWarnings).filter(value => typeof value === 'string').slice(0, 12);
     const highImpactWarning = item => item?.highImpact === true || array(item?.reasons).includes('high-impact');
-    const installedSourceLabel = item => item?.doctorArchive === true ? 'archiveSourceIdentity' : 'source.' + string(item?.sourceKind);
+    const installedSourceLabel = item => item?.runtimePackaging==='union-dependency-generation' ? 'unionGenerationSource' : item?.doctorArchive === true ? 'archiveSourceIdentity' : 'source.' + string(item?.sourceKind);
     const detailSubjectCandidate = subject => subject?.kind === 'bundle' && subject.pkg?.installed === true && (subject.pkg.name === 'dsh-plugin-wsl-env' || subject.pkg.name !== 'dsh-plugin-update-doctor' && string(subject.pkg.source).startsWith('file:'));
     const verifiedDetailRecord = (subject, snapshot) => {
       if (!detailSubjectCandidate(subject)) return null;
@@ -615,7 +631,8 @@ window.__ModuleLoader__.load({
         h('dt', null, t('packageVerification')), h('dd', null, h(Badge, { value: string(pack?.status) || 'unknown', prefix: 'package', t }), pack?.version ? h('span', null, ' · ', pack.version) : null),
         h('dt', null, t('hostVerification')), h('dd', null, h(Badge, { value: string(host?.status) || 'unknown', prefix: 'host', t }),
           typeof host?.activeRows === 'number' && typeof host?.totalRows === 'number' ? h('span', null, ' · ', host.activeRows + ' / ' + host.totalRows) : null),
-        verification?.source ? h(React.Fragment, null, h('dt', null, t(verification.source.expectedKind === 'registry' || verification.source.kind === 'registry' ? 'registrySourceVerification' : 'sourceVerification')), h('dd', null, h(Badge, { value: string(verification.source.status) || 'unknown', prefix: verification.source.expectedKind === 'registry' || verification.source.kind === 'registry' ? 'registryCheck' : 'sourceCheck', t }))) : null);
+        verification?.source ? h(React.Fragment, null, h('dt', null, t(verification.source.expectedKind==='derived-local-union-generation'?'unionSourceVerification':verification.source.expectedKind === 'registry' || verification.source.kind === 'registry' ? 'registrySourceVerification' : 'sourceVerification')), h('dd', null, h(Badge, { value: string(verification.source.status) || 'unknown', prefix: verification.source.expectedKind==='derived-local-union-generation'?'unionSource':verification.source.expectedKind === 'registry' || verification.source.kind === 'registry' ? 'registryCheck' : 'sourceCheck', t }))) : null,
+         verification?.runtime ? h(React.Fragment,null,h('dt',null,t('unionRuntimeVerification')),h('dd',null,h(Badge,{value:string(verification.runtime.status)||'unknown',prefix:'runtime',t}))) : null);
     }
     function ClientSync({ state, retryClient, t }) {
       const failures = array(state?.failures), [retrying, setRetrying] = useState(false), [retryError, setRetryError] = useState('');
@@ -665,8 +682,9 @@ window.__ModuleLoader__.load({
       const restoring = isRestore(plan.operation), selfUpdating = isSelf(plan.operation), migrating = isMigration(plan.operation);
       const githubUpdating = selfUpdating && array(plan.items).some(item => item.sourceKind === 'git');
       const publicMirror = mirrorAcknowledgementRequired(plan);
+      const unionGeneration=array(plan.items).some(item=>item.installMode==='union-generation');
       const ref = useRef(null), cancel = useRef(null); const [ack, setAck] = useState(false), [now, setNow] = useState(Date.now());
-      const [taskPolicy, setTaskPolicy] = useState('wait-for-idle'), [confirmCancel, setConfirmCancel] = useState(false), [confirmPublicMirror, setConfirmPublicMirror] = useState(false);
+      const [taskPolicy, setTaskPolicy] = useState('wait-for-idle'), [confirmCancel, setConfirmCancel] = useState(false), [confirmPublicMirror, setConfirmPublicMirror] = useState(false), [confirmUnionGeneration,setConfirmUnionGeneration]=useState(false);
       useEffect(() => {
         const previous = document.activeElement, dialog = ref.current;
         if (dialog && !dialog.open) dialog.showModal(); cancel.current?.focus();
@@ -721,6 +739,7 @@ window.__ModuleLoader__.load({
         h('span', null, t('stopConsent'))) : null,
       h('p', { className: 'pud-note pud-warning' }, t(selfUpdating ? 'selfGateHelp' : 'confirmSafety')),
       !selfUpdating && array(plan.items).some(item=>item.installMode==='registry-spec') ? h('p',{className:'pud-note pud-warning','data-testid':'pud-registry-handoff-safety'},t('registryHandoffSafety')) : null,
+unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-union-generation-safety'},h('p',null,t('unionGenerationSafety')),h('label',{className:'pud-ack'},h('input',{type:'checkbox',className:'pud-check',checked:confirmUnionGeneration,onChange:event=>setConfirmUnionGeneration(event.target.checked),'data-testid':'pud-confirm-union-generation'}),h('span',null,t('acknowledgeUnionGeneration')))) : null,
       warningDetails,
       h('label', { className: 'pud-ack' },
         h('input', { type: 'checkbox', className: 'pud-check', checked: ack, onChange: event => setAck(event.target.checked) }),
@@ -728,7 +747,7 @@ window.__ModuleLoader__.load({
       expired ? h('p', { className: 'pud-error', role: 'alert' }, t('expired')) : null,
       h('div', { className: 'pud-dialog-actions' },
         h('button', { ref: cancel, type: 'button', className: 'pud-btn', onClick: onCancel }, t('cancel')),
-        h('button', { type: 'button', className: 'pud-btn pud-btn-primary', disabled: !ack || expired || !array(plan.items).length || (taskPolicy === 'cancel-active' && !confirmCancel) || (publicMirror && !confirmPublicMirror), onClick: () => onConfirm({ taskPolicy, ...(taskPolicy === 'cancel-active' ? { confirmCancel: true } : {}), ...(publicMirror && confirmPublicMirror ? { confirmPublicMirror: true } : {}) }) }, selfUpdating ? t(taskPolicy === 'cancel-active' ? 'selfStop' : 'selfWait') : migrating ? t(taskPolicy === 'cancel-active' ? 'confirmMigrationStop' : 'confirmMigrationWait') : t(restoring ? taskPolicy === 'cancel-active' ? 'confirmRestoreStop' : 'confirmRestoreWait' : taskPolicy === 'cancel-active' ? 'confirmStop' : 'confirmWait'))));
+        h('button', { type: 'button', className: 'pud-btn pud-btn-primary', disabled: !ack || expired || !array(plan.items).length || (taskPolicy === 'cancel-active' && !confirmCancel) || (publicMirror && !confirmPublicMirror) || (unionGeneration && !confirmUnionGeneration), onClick: () => onConfirm({ taskPolicy, ...(taskPolicy === 'cancel-active' ? { confirmCancel: true } : {}), ...(publicMirror && confirmPublicMirror ? { confirmPublicMirror: true } : {}), ...(unionGeneration && confirmUnionGeneration ? {confirmUnionGeneration:true} : {}) }) }, selfUpdating ? t(taskPolicy === 'cancel-active' ? 'selfStop' : 'selfWait') : migrating ? t(taskPolicy === 'cancel-active' ? 'confirmMigrationStop' : 'confirmMigrationWait') : t(restoring ? taskPolicy === 'cancel-active' ? 'confirmRestoreStop' : 'confirmRestoreWait' : taskPolicy === 'cancel-active' ? 'confirmStop' : 'confirmWait'))));
     }
     class PanelBoundary extends React.Component {
       constructor(props) { super(props); this.state = { failed: false }; }
@@ -864,10 +883,10 @@ window.__ModuleLoader__.load({
           else setError({ code: 'state-changed', diagnostic: array(answer.reasons).join('; ') });
         } catch (issue) { if (mounted.current) setError(errorInfo(issue)); } finally { if (mounted.current) setPending(''); }
       };
-      const commit = async ({ taskPolicy = 'wait-for-idle', confirmCancel, confirmPublicMirror } = {}) => {
+      const commit = async ({ taskPolicy = 'wait-for-idle', confirmCancel, confirmPublicMirror, confirmUnionGeneration } = {}) => {
         if (!plan || pending) return; const ticket = plan.ticket; setPlan(null); setPending('commit'); setError(null); setOperation(null);
         try {
-          const answer = await read('commit', { ticket, taskPolicy, ...(taskPolicy === 'cancel-active' && confirmCancel === true ? { confirmCancel: true } : {}), ...(mirrorAcknowledgementRequired(plan) && confirmPublicMirror === true ? { confirmPublicMirror: true } : {}) }, 'POST', 45000);
+          const answer = await read('commit', { ticket, taskPolicy, ...(taskPolicy === 'cancel-active' && confirmCancel === true ? { confirmCancel: true } : {}), ...(mirrorAcknowledgementRequired(plan) && confirmPublicMirror === true ? { confirmPublicMirror: true } : {}), ...(array(plan.items).some(item=>item.installMode==='union-generation')&&confirmUnionGeneration===true?{confirmUnionGeneration:true}:{}) }, 'POST', 45000);
           if (!mounted.current) return;
           if (typeof answer.operationId !== 'string') { setPollNotice('unknownOperation'); await load(); return; }
           if (isSelf(answer.operation)) {
@@ -913,7 +932,7 @@ window.__ModuleLoader__.load({
           h('td', null, h('input', { type: 'checkbox', className: 'pud-check', checked: checked.has(item.name) && eligible(item), disabled: !eligible(item) || !!pending || busy,
             'aria-label': t('select') + ' ' + item.name, onChange: event => toggle(item, event.target.checked) })),
           h('td', { className: 'pud-package-cell pud-break' }, h('strong', null, item.name),
-            item.doctorArchive === true ? h('p', { className: 'pud-muted pud-small' }, t('archiveSourceIdentity')) : null),
+            item.runtimePackaging==='union-dependency-generation' ? h('p',{className:'pud-muted pud-small'},t('unionGenerationSource')) : item.doctorArchive === true ? h('p', { className: 'pud-muted pud-small' }, t('archiveSourceIdentity')) : null),
           h('td', null, valueOf(item.version, t('noValue'))), h('td', null, h(VersionValue, { item, t })),
           h('td', null, h(VersionState, { item, t }),
             item.mode === 'host-self-update' ? h('p', { className: versionStates(item).version === 'not-checked' ? 'pud-muted pud-small' : 'pud-impact pud-small' },

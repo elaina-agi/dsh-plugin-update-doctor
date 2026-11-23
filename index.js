@@ -1,16 +1,18 @@
 import { join } from 'node:path';
 import { realpath, readFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import { SelfUpdateCoordinator } from './lib/self-update.js';
 import { SelfUpdatePreflight } from './lib/self-update-policy.js';
 import { GithubSelfUpdatePreflight } from './lib/self-update-github.js';
 import { defineTool } from '@deepseek-ai/dsh-tools';
-import { getDshRuntimeVersion, resolveBundleDir, evaluatePluginCompatibility } from '@deepseek-ai/dsh-app-boot';
+import { getDshRuntimeVersion, resolveBundleDir, evaluatePluginCompatibility, resolvePluginResource } from '@deepseek-ai/dsh-app-boot';
 import { DoctorService } from './lib/service.js';
 import { probeLocks } from './lib/locks.js';
 import { createHandler, ROUTE } from './lib/http.js';
 import { TaskGate } from './lib/task-gate.js';
 import { RegistryStager } from './lib/staging.js';
+import { UnionGenerationStager } from './lib/union-staging.js';
 
 export const name = 'plugin-update-doctor';
 export const inject = ['pluginManager', 'profileContext', 'agents'];
@@ -24,10 +26,21 @@ export async function apply(ctx) {
     // Use the public manager Service. Its updateBundle implementation owns package operations
     // on the manager's providing context; teardown independence is verified by an isolated Host proof.
     const manager = ctx.get('pluginManager');
+    const unionStager = new UnionGenerationStager(join(profile.home,'cache','dsh-plugin-update-doctor',profile.name,'union-staged'),{registryStager:stager});
+    const verifyRunningGeneration=async(directory,reference,{enabled}={})=>{
+        const entry=[...ctx.loader.entries()].find(value=>value.options.id==='web-search-free'&&value.options.name==='dsh-union-search');
+        if(enabled===false)return !entry?.fiber || entry.disabled===true;
+        if(!entry?.moduleNamespace)return false;
+        const originalEntry=pathToFileURL(join(directory,reference.runtimeGeneration.generation,'lib/index.js')).href;
+        const namespace=await import(originalEntry);if(entry.moduleNamespace!==namespace)return false;
+        const sharedPath=resolvePluginResource('@deepseek-ai/schemastery',originalEntry),shared=await import(pathToFileURL(sharedPath).href);
+        if(sharedPath.includes(reference.runtimeGeneration.generation+'/node_modules/')||sharedPath.includes(reference.runtimeGeneration.generation.replaceAll('/','\\')+'\\node_modules\\'))return false;
+        return typeof namespace.Config==='function' && Object.getPrototypeOf(namespace.Config)===shared.default.prototype;
+    };
     const service = new DoctorService({
         manager, profile, runtimeVersion: getDshRuntimeVersion(),
         resolvePackage: async packageName => resolveBundleDir('dsh', packageName, profile.installAnchor, profile.dir),
-        probeLocks, statePath: join(profile.home, 'cache', 'dsh-plugin-update-doctor', profile.name, 'history.json'), taskGate, stager, hmrAvailable:!!ctx.get('hmr'),
+        probeLocks, statePath: join(profile.home, 'cache', 'dsh-plugin-update-doctor', profile.name, 'history.json'), taskGate, stager, unionStager, verifyRunningGeneration, hmrAvailable:!!ctx.get('hmr'),
     });
     await service.initialize();
     const selfUpdate = new SelfUpdateCoordinator({ manager, profile, taskGate,

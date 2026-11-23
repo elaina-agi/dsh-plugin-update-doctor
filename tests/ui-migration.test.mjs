@@ -114,6 +114,10 @@ test('official detail extension inspects only eligible subjects and verified Doc
   assert(component.includes('current.current?.abort()'));
 });
 
+test('Union generation requires explicit derived-source consent independently of ordinary and stop acknowledgements',()=>{
+ const plan={...basePlan,operation:'batch-update',unionGenerationRequiresAcknowledgement:true,items:[{name:'dsh-union-search',from:'0.10.24',to:'0.10.25',installMode:'union-generation'}]},harness=dialogHarness(plan),tree=harness.render();assert(text(tree).includes('本地归档'));assert(text(tree).includes('Versions'));assert.equal(harness.find('pud-confirm-union-generation').props.checked,false);const ack=descendants(tree).find(node=>node.type==='input'&&node.props.type==='checkbox'&&!node.props['data-testid']);ack.props.onChange({target:{checked:true}});assert.equal(harness.primary().props.disabled,true);harness.find('pud-confirm-union-generation').props.onChange({target:{checked:true}});assert.equal(harness.primary().props.disabled,false);harness.primary().props.onClick();assert.equal(harness.confirmations[0].taskPolicy,'wait-for-idle');assert.equal(harness.confirmations[0].confirmUnionGeneration,true);assert.equal(harness.confirmations[0].confirmCancel,undefined);
+});
+
 test('official section uses public slot and layout navigation without DOM or route injection',()=>{
   const registration=section("          scope.slots.inject('plugins.detail.section'","          scope.slots.inject('main'");
   assert(registration.includes("name: 'plugins.detail.section'"));assert(registration.includes("scope.get('layout')"));assert(registration.includes('layout.selectPanel(PANEL_ID)'));

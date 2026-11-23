@@ -148,13 +148,13 @@ window.__ModuleLoader__.load({
        'reason.wsl-version-not-yet-verified': 'This WSL version has not yet passed runtime-generation verification.',
        'reason.wsl-archive-requires-new-review': 'The WSL archive bytes differ from the verified build.',
        'reason.high-impact': 'High-impact plugin: confirm task handling and verify activation afterward.',
-       safety: 'DSH stays open. Wait for current tasks by default, or explicitly confirm stopping them. WSL 0.24.0 → 0.26.2 uses the verified runtime-generation path; existing WSL sessions may retain their prior preset until a new session is opened.'
+       safety: 'DSH stays open. Wait for current tasks by default, or explicitly confirm stopping them. WSL 0.24.0 → 0.26.2 → 0.28.0 uses the verified runtime-generation path; existing WSL sessions may retain their prior preset until a new session is opened.'
     });
     Object.assign(ZH, {
        'reason.wsl-version-not-yet-verified': '此 WSL 版本尚未通过代际更新验证。',
        'reason.wsl-archive-requires-new-review': 'WSL 归档字节与已验证构建不同，需要重新检查。',
        'reason.high-impact': '高影响插件，请确认任务处理方式并核对更新后的加载结果。',
-       safety: 'DSH 保持打开：默认等待当前任务，也可额外确认停止任务。WSL 0.24.0 → 0.26.2 使用已验证代际路径；已有 WSL 会话可能保留原预设，新会话使用新版。'
+       safety: 'DSH 保持打开：默认等待当前任务，也可额外确认停止任务。WSL 0.24.0 → 0.26.2 → 0.28.0 使用已验证代际路径；已有 WSL 会话可能保留原预设，新会话使用新版。'
     });
     Object.assign(EN, {
       restore: 'Review previous-version recovery', recoveryTarget: 'Recorded recovery version', recoveryRequired: 'Recovery requires your review', recoveryHelp: 'Only the previous package recorded for this failed operation can be restored. Review its version and task policy; no arbitrary downgrade is accepted.',
@@ -334,6 +334,70 @@ window.__ModuleLoader__.load({
       'reason.identity-store-unverified':'安装／恢复记录无法核验，已停止管理操作；请核对官方管理器，不要覆盖未知记录。',
       registryHandoffSafety:'普通 npm 更新通过官方管理器保留 npm 安装来源。准备的归档仅作预检证据，宿主会沿用现有 fallback 重新下载；安装和恢复均可能失败。WSL 代际包装仍使用本地归档。'
     });
+    Object.assign(EN, {
+      migrateSource: 'Review migration back to npm', migrationResults: 'Source migration results', migratingSource: 'Migrating source', reviewingMigration: 'Reviewing source migration…', 'status.migrated': 'Source migrated',
+      confirmMigrationTitle: 'Confirm migration from archive to npm', confirmMigrationImpact: 'Reinstall this same plugin version from npm, not an upgrade. The change affects all sessions in this profile and may temporarily unload the plugin.',
+      migrationSafety: 'Only a verified earlier Doctor archive installation can be migrated. The version stays the same; its saved installation source becomes an npm spec so official version checks can resume. Failed installation may require restoring the old archive. Existing settings and tasks still need review.',
+      acknowledgeMigration: 'I reviewed the same version, the archive-to-npm source change, and the possible temporary unload or archive recovery.',
+      confirmMigrationWait: 'Confirm migration and wait for idle', confirmMigrationStop: 'Confirm task stopping and migrate', migrationHelp: 'Migration is separate from batch updates. It changes the installation source, not the version, and requires independent confirmation.',
+      mirrorSafety: 'This operation uses the fixed public npm mirror. Mirror versions can lag. Review the prepared package and canonical npm comparison evidence separately: the Host refetches using its registry plan, which is shown only when provided, not an atomic byte replacement. Installation/recovery may fail. No source configuration is silently changed.',
+      acknowledgeMirror: 'I explicitly accept this public-mirror source and its displayed fallback/refetch and recovery risks.',
+      mirrorRegistryPlan: 'Confirmed Host registry plan', mirrorPlanPrimary: 'Configured first source', mirrorPlanResolved: 'pnpm resolved source', mirrorPlanFallback: 'Fallback source',
+      'reason.self-public-mirror-confirmation-required': 'Public-mirror self-update requires its additional source-risk acknowledgement.',
+      detailDoctorTitle: 'Plugin online updates · independent check', detailDoctorHelp: 'This section is provided by the community updater, not the Host’s built-in Versions list. It can inspect Doctor-managed archive installations without pretending they are npm sources.',
+      detailDoctorProbe: 'Check updater records and versions', detailDoctorOpen: 'Handle in Plugin online updates', detailDoctorManual: 'Open Plugin online updates from the left sidebar to review and confirm; this section cannot install or migrate a plugin.',
+      detailDoctorUnmanaged: 'No matching Doctor-managed archive record was verified. Use the official manager to inspect this installation source.',
+      detailDoctorReadOnly: 'Checking is read-only. Updating or source migration is reviewed and confirmed separately in Plugin online updates.',
+      sourcePublicOnly: 'Normal updates use verified public npm sources, including explicitly confirmed public mirrors where supported. Archive provenance, source migration, and update confirmation are checked separately.'
+    });
+    Object.assign(ZH, {
+      migrateSource: '核对迁回 npm 来源', migrationResults: '来源迁移结果', migratingSource: '正在迁移来源', reviewingMigration: '正在核对来源迁移…', 'status.migrated': '来源已迁移',
+      confirmMigrationTitle: '确认从归档迁回 npm 来源', confirmMigrationImpact: '从 npm 重新安装此插件的同一版本，不是升级。变更影响当前配置的所有会话，期间可能暂时卸载插件。',
+      migrationSafety: '只迁移已核验的旧更新器归档安装。版本号不变，保存来源改为 npm 规格，以恢复官方版本检查资格。安装失败可能需要恢复旧归档；仍需核对现有配置和任务影响。',
+      acknowledgeMigration: '我已核对同一版本、从归档迁回 npm 的来源变化，以及临时卸载或恢复旧归档的风险。',
+      confirmMigrationWait: '确认迁移并等待空闲', confirmMigrationStop: '确认停止任务并迁移', migrationHelp: '来源迁移不与批量更新混合，只改变安装来源、不升级版本，需要单独确认。',
+      mirrorSafety: '本次使用固定公共 npm 镜像，镜像版本可能延迟。请分别核对准备的包和官方 npm 对照证据；宿主按其安装源计划重新下载，提供时才展示该计划，并非原子字节替换。安装和恢复可能失败，不会偷偷修改来源配置。',
+      acknowledgeMirror: '我明确接受本次公共镜像来源，以及显示的 fallback、重新下载和恢复风险。',
+      mirrorRegistryPlan: '已确认宿主安装源计划', mirrorPlanPrimary: '配置的首选来源', mirrorPlanResolved: 'pnpm 实际来源', mirrorPlanFallback: '备用来源',
+      'reason.self-public-mirror-confirmation-required': '公共镜像自身升级需要额外确认来源风险。',
+      detailDoctorTitle: '插件在线更新 · 独立检查', detailDoctorHelp: '此区由社区更新器提供，不是宿主内置 Versions 列表。它检查更新器管理的归档安装，不伪装成 npm 来源。',
+      detailDoctorProbe: '检查更新器记录与版本', detailDoctorOpen: '在插件在线更新中处理', detailDoctorManual: '请从左侧打开“插件在线更新”核对并确认；此区不能安装或迁移插件。',
+      detailDoctorUnmanaged: '没有核验到匹配的更新器归档记录，请通过官方管理器核对安装来源。',
+      detailDoctorReadOnly: '检查只读；更新或迁移来源需要到“插件在线更新”分别核对并确认。',
+      sourcePublicOnly: '普通更新使用已核验的公共 npm 来源，支持时公共镜像需明确确认；归档身份、来源迁移和更新确认分别核验。'
+    });
+    Object.assign(EN, {
+      acknowledgeMirror: 'I explicitly accept this public-mirror source, possible Host fallback/refetch, and installation/recovery risks. This does not confirm an undisclosed transport plan.',
+      mirrorRegistryPlan: 'Prepared Host registry-plan evidence', mirrorPlanUnavailable: 'No complete Host registry plan was provided or bound for this operation. The Host manages fallback and refetch; only the selected source and available observations are shown.',
+      mirrorFallbackConfigured: 'Host fallback observed as configured', mirrorFallbackNotConfigured: 'No Host fallback observed at preparation', mirrorFallbackUnknown: 'Host fallback configuration was not verified',
+      archiveSourceIdentity: 'Local archive · verified npm provenance',
+      'info.public-mirror-may-lag': 'The public mirror may lag behind official npm; this version result applies to the mirror only.',
+      'reason.dependency-graph-changed': 'The dependency declarations or installed graph changed. Recheck and review the dependency update separately before replacement.',
+      'reason.dependency-source-unsupported': 'A dependency uses an unreviewed source or Host/runtime package. Use an independently reviewed installation path.',
+      'reason.dependency-not-resolved': 'An installed dependency could not be located for read-only verification. Inspect the package state in the official manager before retrying.',
+      'reason.dependency-graph-limit': 'The dependency graph exceeded the bounded verification budget. This is not proof of corruption; it requires separate review.',
+      'reason.dependency-path-unsupported': 'A dependency contains an unsupported linked or unsafe path. Its graph cannot be verified by this update path.',
+      'reason.dependency-graph-update-requires-separate-review': 'This dependency layout or change has not been admitted. It requires separate review; merely having dependencies is not an incompatibility finding.',
+      'reason.migration-not-admitted': 'Migration requires an identified earlier ordinary Doctor archive with no unresolved operation. Other sources must be reviewed in the official manager.',
+      'reason.migration-state-changed': 'The archive installation changed during migration preparation. Refresh and review the same-version migration again.',
+      'reason.migration-outcome-unknown': 'The migration has no verified final result. Inspect installed state and the official manager; do not automatically repeat it.'
+    });
+    Object.assign(ZH, {
+      acknowledgeMirror: '我明确接受本次公共镜像来源、宿主可能使用 fallback 重新下载，以及安装／恢复风险；这不表示确认未披露的传输计划。',
+      mirrorRegistryPlan: '准备时的宿主安装源计划证据', mirrorPlanUnavailable: '本次未提供或绑定完整宿主安装源计划。fallback 和重新下载由宿主管理；这里仅显示所选来源及已有观察，不能视为完整计划已确认。',
+      mirrorFallbackConfigured: '准备时观察到宿主已配置备用来源', mirrorFallbackNotConfigured: '准备时未观察到宿主备用来源', mirrorFallbackUnknown: '宿主备用来源配置未核验',
+      archiveSourceIdentity: '本地归档 · 已核验 npm 出处',
+      'info.public-mirror-may-lag': '公共镜像可能落后于官方 npm；此版本结果仅针对镜像来源。',
+      'reason.dependency-graph-changed': '依赖声明或实际依赖图发生变化，请重新检查，并单独审查依赖更新后再替换。',
+      'reason.dependency-source-unsupported': '依赖使用了未审查来源或宿主／运行时包，需要独立审查的安装路径。',
+      'reason.dependency-not-resolved': '无法定位某项已安装依赖进行只读核验，请先通过官方管理器核对包状态再重试。',
+      'reason.dependency-graph-limit': '依赖图超过有界核验预算；这不证明包损坏，需要单独审查。',
+      'reason.dependency-path-unsupported': '依赖包含不支持的链接或不安全路径，当前更新路径无法核验该依赖图。',
+      'reason.dependency-graph-update-requires-separate-review': '此依赖布局或变化尚未准入，需单独审查；仅有依赖不代表插件不兼容。',
+      'reason.migration-not-admitted': '迁移仅接受已识别的旧普通更新器归档且无未解决操作，其它来源需通过官方管理器核对。',
+      'reason.migration-state-changed': '准备迁移期间归档安装已变化，请刷新并重新核对同版本来源迁移。',
+      'reason.migration-outcome-unknown': '来源迁移没有已核验的最终结果，请核对实际安装和官方管理器，不要自动重复操作。'
+    });
     const githubReasonAliases = {
       'self-github-tree-mode-unsupported': 'self-github-tree-unsupported', 'self-github-tree-path-unsupported': 'self-github-tree-unsupported',
       'self-github-tree-size-unsupported': 'self-github-tree-unsupported', 'self-github-tree-invalid': 'self-github-tree-unsupported',
@@ -398,7 +462,35 @@ window.__ModuleLoader__.load({
     const recoveryEligible = item => item?.canRestore === true && !!string(item.restoreVersion) && !!string(item.recoveryId);
     const isSelf = operation => operation === 'host-self-update';
     const isRestore = operation => operation === 'batch-restore';
+    const isMigration = operation => operation === 'source-migration';
+    const migrationEligible = item => false;
+    const mirrorAcknowledgementRequired = plan => plan?.mirrorRiskRequiresAcknowledgement === true || array(plan?.items).some(item => item?.mirrorRiskRequiresAcknowledgement === true || item?.publicMirror === true || item?.sourceMode === 'public-mirror' || safeQueryOrigin(item?.registry) === 'https://registry.npmmirror.com');
+    const operationResultTitle = operation => isMigration(operation) ? 'migrationResults' : isRestore(operation) ? 'restoreResults' : 'batchResults';
+    const resultStatus = item => item?.installMode === 'registry-migration' && item.status === 'updated' ? 'migrated' : string(item?.status) || 'unknown';
+    const mirrorPlanRows = plan => {
+      const value = plan?.hostRegistryPlan ?? array(plan?.items).find(item => item?.hostRegistryPlan)?.hostRegistryPlan;
+      if (!value || typeof value !== 'object') return [];
+      const rows = [
+        { label: 'mirrorPlanPrimary', origin: safeQueryOrigin(value.registry ?? value.resolved) },
+        { label: 'mirrorPlanResolved', origin: safeQueryOrigin(value.resolved) },
+        ...array(value.fallbackRegistries).slice(0, 8).map(origin => ({ label: 'mirrorPlanFallback', origin: safeQueryOrigin(origin) })),
+      ];
+      return rows;
+    };
+    const mirrorPlanEvidence = plan => {
+      const rows = mirrorPlanRows(plan);
+      const observation = plan?.hostRegistryTransport ?? array(plan?.items).find(item => item?.hostRegistryTransport)?.hostRegistryTransport;
+      return { rows, complete: rows.length > 0, fallbackLabel: observation?.fallbackConfigured === true ? 'mirrorFallbackConfigured' : observation?.fallbackConfigured === false ? 'mirrorFallbackNotConfigured' : 'mirrorFallbackUnknown' };
+    };
     const informationWarnings = item => array(item?.infoWarnings).filter(value => typeof value === 'string').slice(0, 12);
+    const highImpactWarning = item => item?.highImpact === true || array(item?.reasons).includes('high-impact');
+    const installedSourceLabel = item => item?.doctorArchive === true ? 'archiveSourceIdentity' : 'source.' + string(item?.sourceKind);
+    const detailSubjectCandidate = subject => subject?.kind === 'bundle' && subject.pkg?.installed === true && (subject.pkg.name === 'dsh-plugin-wsl-env' || subject.pkg.name !== 'dsh-plugin-update-doctor' && string(subject.pkg.source).startsWith('file:'));
+    const verifiedDetailRecord = (subject, snapshot) => {
+      if (!detailSubjectCandidate(subject)) return null;
+      const record = array(snapshot?.bundles).find(item => item?.name === subject.pkg.name && item?.installed === true && item.version === subject.pkg.version);
+      return record?.doctorArchive === true ? record : null;
+    };
     const boundedText = (value, limit = 12000) => string(value).slice(-limit);
     const boundedLogs = value => array(value).slice(-60).map(chunk => ({ name: boundedText(chunk?.name, 200), stream: boundedText(chunk?.stream, 16), text: boundedText(chunk?.text, 1000) }));
     const request = async (action, params = {}, method = 'GET', signal, timeoutMs = 45000) => {
@@ -515,7 +607,7 @@ window.__ModuleLoader__.load({
         return h('tr', { key: string(item.name) || i },
         h('td', { className: 'pud-break pud-package-cell' }, valueOf(item.name, t('noValue'))),
         h('td', null, valueOf(item.from, t('noValue'))), h('td', null, valueOf(item.to, t('noValue'))),
-        h('td', null, h(Badge, { value: string(item.status) || 'unknown', t })),
+        h('td', null, h(Badge, { value: resultStatus(item), t })),
         h('td', null, h(Verification, { verification: item.verification, t }),
            item.restore ? h('div', { className: 'pud-note pud-small' }, t('recoveryOutcome'), ' · ', h(Badge, { value: string(item.restore.application) || 'unknown', prefix: 'outcome', t }), h(Verification, { verification: item.restoreVerification, t })) : null),
         h('td', null, canRecover && typeof onRestore === 'function' ? h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: busy, onClick: () => onRestore(item.name), 'data-testid': 'pud-item-restore' }, t('restore')) : null,
@@ -528,7 +620,7 @@ window.__ModuleLoader__.load({
     function Record({ record, t, locale, onRestore, busy, recoveries }) {
       const result = record?.result ?? record?.event ?? {}; const items = array(record?.items); const outcome = string(result.application) || string(record?.outcome) || 'unknown';
       return h('details', { className: 'pud-record' }, h('summary', null,
-        h('span', { className: 'pud-record-heading pud-break' }, valueOf(record?.package ?? record?.target, items.length ? t(isRestore(record?.operation) ? 'restoreResults' : 'batchResults') + ' · ' + items.length : t('noValue'))),
+        h('span', { className: 'pud-record-heading pud-break' }, valueOf(record?.package ?? record?.target, items.length ? t(operationResultTitle(record?.operation)) + ' · ' + items.length : t('noValue'))),
         h(Badge, { value: outcome, prefix: 'outcome', t }), h('span', { className: 'pud-muted pud-small' }, dateText(record?.finishedAt ?? record?.time ?? record?.startedAt, locale, t))),
         h('p', { className: 'pud-muted pud-small' }, t(record?.origin === 'official-event' ? 'officialHistory' : 'ownHistory')),
         items.length ? h(BatchTable, { items, t, onRestore, busy, recoveries }) : h('dl', { className: 'pud-definition pud-small' },
@@ -538,10 +630,11 @@ window.__ModuleLoader__.load({
         h(Finding, { finding: record?.classification, t }), h(SourceDetails, { value: record, t }));
     }
     function ConfirmDialog({ plan, t, locale, onCancel, onConfirm }) {
-      const restoring = isRestore(plan.operation), selfUpdating = isSelf(plan.operation);
+      const restoring = isRestore(plan.operation), selfUpdating = isSelf(plan.operation), migrating = isMigration(plan.operation);
       const githubUpdating = selfUpdating && array(plan.items).some(item => item.sourceKind === 'git');
+      const publicMirror = mirrorAcknowledgementRequired(plan);
       const ref = useRef(null), cancel = useRef(null); const [ack, setAck] = useState(false), [now, setNow] = useState(Date.now());
-      const [taskPolicy, setTaskPolicy] = useState('wait-for-idle'), [confirmCancel, setConfirmCancel] = useState(false);
+      const [taskPolicy, setTaskPolicy] = useState('wait-for-idle'), [confirmCancel, setConfirmCancel] = useState(false), [confirmPublicMirror, setConfirmPublicMirror] = useState(false);
       useEffect(() => {
         const previous = document.activeElement, dialog = ref.current;
         if (dialog && !dialog.open) dialog.showModal(); cancel.current?.focus();
@@ -553,7 +646,8 @@ window.__ModuleLoader__.load({
         h('strong', { className: 'pud-break' }, item.name),
         h('div', { className: 'pud-muted' }, valueOf(item.from, t('noValue')), ' → ', valueOf(item.to, t('noValue'))),
         selfUpdating ? h(CommitDetails, { value: item, t }) : null,
-        item.highImpact || array(item.infoWarnings).length || array(item.reasons).includes('high-impact') ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null));
+        highImpactWarning(item) ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null,
+        h(InformationWarnings, { item, t })));
       const warningDetails = array(plan.warnings).length ? h('details', { className: 'pud-small' },
         h('summary', null, t('detail')), h('ul', { className: 'pud-list' }, ...plan.warnings.map((text, i) => h('li', { key: i }, string(text))))) : null;
       return h('dialog', {
@@ -567,13 +661,23 @@ window.__ModuleLoader__.load({
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
         },
       },
-      h('h2', { id: 'pud-confirm-title' }, selfUpdating ? t('confirmSelfTitle') : t(restoring ? 'confirmRestoreTitle' : 'confirmTitle')),
-      h('p', { id: 'pud-confirm-impact', className: 'pud-muted' }, selfUpdating ? t('confirmSelfImpact') : t(restoring ? 'confirmRestoreImpact' : 'confirmImpact')),
+      h('h2', { id: 'pud-confirm-title' }, selfUpdating ? t('confirmSelfTitle') : migrating ? t('confirmMigrationTitle') : t(restoring ? 'confirmRestoreTitle' : 'confirmTitle')),
+      h('p', { id: 'pud-confirm-impact', className: 'pud-muted' }, selfUpdating ? t('confirmSelfImpact') : migrating ? t('confirmMigrationImpact') : t(restoring ? 'confirmRestoreImpact' : 'confirmImpact')),
       h('dl', { className: 'pud-definition' },
         h('dt', null, t('profile')), h('dd', null, valueOf(plan.profile, t('noValue'))),
         h('dt', null, t('taskPolicy')), h('dd', null, t(taskPolicy === 'cancel-active' ? 'stopPolicy' : 'waitPolicy')),
         h('dt', null, t('expires')), h('dd', null, dateText(plan.expiresAt, locale, t))),
-      h('ul', { className: 'pud-dialog-list', 'aria-label': t(restoring ? 'restoreResults' : 'batchResults') }, ...reviewItems),
+      h('ul', { className: 'pud-dialog-list', 'aria-label': t(operationResultTitle(plan.operation)) }, ...reviewItems),
+      migrating ? h('p', { className: 'pud-note pud-warning', 'data-testid': 'pud-migration-safety' }, t('migrationSafety')) : null,
+      publicMirror ? h('div', { className: 'pud-note pud-warning', 'data-testid': 'pud-public-mirror-safety' },
+        h('p', { className: 'pud-small' }, t('mirrorSafety')),
+        mirrorPlanEvidence(plan).complete ? h(React.Fragment, null,
+          h('strong', null, t('mirrorRegistryPlan')),
+          h('dl', { className: 'pud-definition pud-small' }, ...mirrorPlanEvidence(plan).rows.map((row, i) => h(React.Fragment, { key: i }, h('dt', null, t(row.label)), h('dd', null, row.origin || t('querySourceUnknown')))))) : h(React.Fragment, null,
+          h('p', { className: 'pud-muted pud-small', 'data-testid': 'pud-mirror-plan-unavailable' }, t('mirrorPlanUnavailable')),
+          h('p', { className: 'pud-muted pud-small' }, t(mirrorPlanEvidence(plan).fallbackLabel))),
+        h('ul', { className: 'pud-list pud-small' }, ...array(plan.items).filter(item => item?.publicMirror || item?.sourceMode === 'public-mirror' || safeQueryOrigin(item?.registry) === 'https://registry.npmmirror.com').map((item, i) => h('li', { key: i }, string(item.name), ' · ', safeQueryOrigin(item.registry) || t('querySourceUnknown')))),
+        h('label', { className: 'pud-ack' }, h('input', { type: 'checkbox', className: 'pud-check', checked: confirmPublicMirror, onChange: event => setConfirmPublicMirror(event.target.checked), 'data-testid': 'pud-confirm-public-mirror' }), h('span', null, t('acknowledgeMirror')))) : null,
       githubUpdating ? h('p', { className: 'pud-note pud-warning', 'data-testid': 'pud-github-safety' }, t('githubConfirmSafety')) : null,
       h('fieldset', { className: 'pud-policy' }, h('legend', null, t('taskPolicy')),
         h('label', { className: 'pud-policy-choice' }, h('input', { type: 'radio', name: 'pud-task-policy', value: 'wait-for-idle', checked: taskPolicy === 'wait-for-idle', onChange: () => { setTaskPolicy('wait-for-idle'); setConfirmCancel(false); } }),
@@ -583,14 +687,16 @@ window.__ModuleLoader__.load({
       taskPolicy === 'cancel-active' ? h('label', { className: 'pud-note pud-ack pud-stop-confirm' },
         h('input', { type: 'checkbox', className: 'pud-check', checked: confirmCancel, onChange: event => setConfirmCancel(event.target.checked), 'data-testid': 'pud-confirm-cancel' }),
         h('span', null, t('stopConsent'))) : null,
-      h('p', { className: 'pud-note pud-warning' }, t(selfUpdating ? 'selfGateHelp' : 'confirmSafety')), warningDetails,
+      h('p', { className: 'pud-note pud-warning' }, t(selfUpdating ? 'selfGateHelp' : 'confirmSafety')),
+      !selfUpdating && array(plan.items).some(item=>item.installMode==='registry-spec') ? h('p',{className:'pud-note pud-warning','data-testid':'pud-registry-handoff-safety'},t('registryHandoffSafety')) : null,
+      warningDetails,
       h('label', { className: 'pud-ack' },
         h('input', { type: 'checkbox', className: 'pud-check', checked: ack, onChange: event => setAck(event.target.checked) }),
-        h('span', null, githubUpdating ? t('acknowledgeGithubSelf') : selfUpdating ? t('acknowledgeSelf') : t(restoring ? 'acknowledgeRestore' : 'acknowledge'))),
+        h('span', null, githubUpdating ? t('acknowledgeGithubSelf') : selfUpdating ? t('acknowledgeSelf') : migrating ? t('acknowledgeMigration') : t(restoring ? 'acknowledgeRestore' : 'acknowledge'))),
       expired ? h('p', { className: 'pud-error', role: 'alert' }, t('expired')) : null,
       h('div', { className: 'pud-dialog-actions' },
         h('button', { ref: cancel, type: 'button', className: 'pud-btn', onClick: onCancel }, t('cancel')),
-        h('button', { type: 'button', className: 'pud-btn pud-btn-primary', disabled: !ack || expired || !array(plan.items).length || (taskPolicy === 'cancel-active' && !confirmCancel), onClick: () => onConfirm({ taskPolicy, ...(taskPolicy === 'cancel-active' ? { confirmCancel: true } : {}) }) }, selfUpdating ? t(taskPolicy === 'cancel-active' ? 'selfStop' : 'selfWait') : t(restoring ? taskPolicy === 'cancel-active' ? 'confirmRestoreStop' : 'confirmRestoreWait' : taskPolicy === 'cancel-active' ? 'confirmStop' : 'confirmWait'))));
+        h('button', { type: 'button', className: 'pud-btn pud-btn-primary', disabled: !ack || expired || !array(plan.items).length || (taskPolicy === 'cancel-active' && !confirmCancel) || (publicMirror && !confirmPublicMirror), onClick: () => onConfirm({ taskPolicy, ...(taskPolicy === 'cancel-active' ? { confirmCancel: true } : {}), ...(publicMirror && confirmPublicMirror ? { confirmPublicMirror: true } : {}) }) }, selfUpdating ? t(taskPolicy === 'cancel-active' ? 'selfStop' : 'selfWait') : migrating ? t(taskPolicy === 'cancel-active' ? 'confirmMigrationStop' : 'confirmMigrationWait') : t(restoring ? taskPolicy === 'cancel-active' ? 'confirmRestoreStop' : 'confirmRestoreWait' : taskPolicy === 'cancel-active' ? 'confirmStop' : 'confirmWait'))));
     }
     class PanelBoundary extends React.Component {
       constructor(props) { super(props); this.state = { failed: false }; }
@@ -626,7 +732,7 @@ window.__ModuleLoader__.load({
       const currentItems = new Map(initialItems.map(item => [item.name, item]));
       const scannedItems = scanResult ? array(scanResult.items).map(item => {
         const current = currentItems.get(item.name);
-        return { ...item, ...(current ? Object.fromEntries(['canRestore', 'restoreVersion', 'recoveryId'].map(key => [key, Object.hasOwn(item, key) ? item[key] : current[key]])) : {}) };
+        return { ...item, ...(current ? Object.fromEntries(['canRestore', 'restoreVersion', 'recoveryId', 'canMigrate', 'doctorArchive'].map(key => [key, Object.hasOwn(item, key) ? item[key] : current[key]])) : {}) };
       }) : [];
       const baseItems = scanResult ? [...scannedItems, ...initialItems.filter(item => recoveryEligible(item) && !scannedItems.some(scanned => scanned.name === item.name))
         .map(item => ({ ...initialVersionItem(item), status: 'recovery-required' }))] : initialItems.map(initialVersionItem);
@@ -715,10 +821,10 @@ window.__ModuleLoader__.load({
           else setError({ code: 'state-changed', diagnostic: array(answer.reasons).join('; ') });
         } catch (issue) { if (mounted.current) setError(errorInfo(issue)); } finally { if (mounted.current) setPending(''); }
       };
-      const commit = async ({ taskPolicy = 'wait-for-idle', confirmCancel } = {}) => {
+      const commit = async ({ taskPolicy = 'wait-for-idle', confirmCancel, confirmPublicMirror } = {}) => {
         if (!plan || pending) return; const ticket = plan.ticket; setPlan(null); setPending('commit'); setError(null); setOperation(null);
         try {
-          const answer = await read('commit', { ticket, taskPolicy, ...(taskPolicy === 'cancel-active' && confirmCancel === true ? { confirmCancel: true } : {}) }, 'POST', 45000);
+          const answer = await read('commit', { ticket, taskPolicy, ...(taskPolicy === 'cancel-active' && confirmCancel === true ? { confirmCancel: true } : {}), ...(mirrorAcknowledgementRequired(plan) && confirmPublicMirror === true ? { confirmPublicMirror: true } : {}) }, 'POST', 45000);
           if (!mounted.current) return;
           if (typeof answer.operationId !== 'string') { setPollNotice('unknownOperation'); await load(); return; }
           if (isSelf(answer.operation)) {
@@ -763,16 +869,19 @@ window.__ModuleLoader__.load({
         return h('tr', { key: item.name, 'data-open': item.name === openName, 'data-package': item.name },
           h('td', null, h('input', { type: 'checkbox', className: 'pud-check', checked: checked.has(item.name) && eligible(item), disabled: !eligible(item) || !!pending || busy,
             'aria-label': t('select') + ' ' + item.name, onChange: event => toggle(item, event.target.checked) })),
-          h('td', { className: 'pud-package-cell pud-break' }, h('strong', null, item.name)),
+          h('td', { className: 'pud-package-cell pud-break' }, h('strong', null, item.name),
+            item.doctorArchive === true ? h('p', { className: 'pud-muted pud-small' }, t('archiveSourceIdentity')) : null),
           h('td', null, valueOf(item.version, t('noValue'))), h('td', null, h(VersionValue, { item, t })),
           h('td', null, h(VersionState, { item, t }),
             item.mode === 'host-self-update' ? h('p', { className: versionStates(item).version === 'not-checked' ? 'pud-muted pud-small' : 'pud-impact pud-small' },
               versionStates(item).version === 'not-checked' ? t('selfCheckHelp') : [t('selfMode'), ' · ', t('selfHelp')]) : null,
             item.mode === 'host-self-update' && item.sourceKind === 'git' ? h('details', { className: 'pud-small' }, h('summary', null, t('githubHead')), h(CommitDetails, { value: item, t })) : null,
-            item.highImpact || array(item.infoWarnings).length || array(item.reasons).includes('high-impact') ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null, reasons),
+            highImpactWarning(item) ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null,
+            h(InformationWarnings, { item, t }), reasons),
           h('td', null, h('div', { className: 'pud-inline' }, h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: !!pending,
             onClick: () => setOpenName(current => current === item.name ? '' : item.name), 'aria-expanded': openName === item.name }, t('diagnosis')),
-            recoveryEligible(item) ? h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: !!pending || busy, onClick: () => { void prepareRestore(item.name); }, 'data-testid': 'pud-restore' }, t('restore')) : null)));
+            recoveryEligible(item) ? h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: !!pending || busy, onClick: () => { void prepareRestore(item.name); }, 'data-testid': 'pud-restore' }, t('restore')) : null,
+            migrationEligible(item) ? h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: !!pending || busy || !!checked.size, onClick: () => { void prepareMigration(item.name); }, 'data-testid': 'pud-migrate' }, t('migrateSource')) : null)));
       });
       const pluginTable = !snapshot ? null : !baseItems.length ? h('p', { className: 'pud-muted' }, t('empty')) : h('div', { className: 'pud-table-wrap' },
         h('table', { className: 'pud-table', 'data-testid': 'pud-plugin-table' },
@@ -812,16 +921,18 @@ window.__ModuleLoader__.load({
         detailBundle ? h('dl', { className: 'pud-definition pud-small', style: { marginTop: 14 } },
           h('dt', null, t('hostState')), h('dd', null, h(Badge, { value: string(detailBundle.state) || 'unknown', prefix: 'state', t })),
           h('dt', null, t('rows')), h('dd', null, valueOf(detailBundle.activeRows, 0) + ' / ' + valueOf(detailBundle.totalRows, 0)),
-          h('dt', null, t('source')), h('dd', null, localText(t, 'source.' + string(detailBundle.sourceKind), t('noValue')))) : null,
+          h('dt', null, t('source')), h('dd', null, localText(t, installedSourceLabel(detailBundle), t('noValue')))) : null,
         h('div', { className: 'pud-toolbar', style: { marginTop: 14 } }, h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy || !detailBundle?.installed,
-          onClick: () => { void runLocks(); } }, t('locks')), recoveryEligible(detailBundle) ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy, onClick: () => { void prepareRestore(openName); }, 'data-testid': 'pud-detail-restore' }, t('restore')) : null),
+          onClick: () => { void runLocks(); } }, t('locks')), recoveryEligible(detailBundle) ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy, onClick: () => { void prepareRestore(openName); }, 'data-testid': 'pud-detail-restore' }, t('restore')) : null,
+          migrationEligible(detailBundle) ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy || !!checked.size, onClick: () => { void prepareMigration(openName); }, 'data-testid': 'pud-detail-migrate' }, t('migrateSource')) : null),
+        migrationEligible(detailBundle) ? h('p', { className: 'pud-note pud-warning' }, t('migrationHelp')) : null,
         recoveryEligible(detailBundle) ? h('div', { className: 'pud-note pud-warning' }, h('strong', null, t('recoveryTarget') + ': ', detailBundle.restoreVersion), h('p', { className: 'pud-muted pud-small' }, t('recoveryHelp'))) : null,
         h(Finding, { finding: diagnosis?.classification, t }), lockView,
         h('details', { className: 'pud-small', style: { marginTop: 14 } }, h('summary', null, t('detail')), h(SourceDetails, { value: diagnosis, t }))) : null;
       const observedSteps = array(operation?.steps).length ? h('details', null, h('summary', null, t('steps')),
         h('ol', { className: 'pud-list' }, ...operation.steps.map((step, i) => h('li', { key: i },
           stepText(step, t), step.name ? h('span', { className: 'pud-break' }, ' · ', step.name) : null)))) : null;
-      const recovering = isRestore(operation?.record?.operation);
+      const recovering = isRestore(operation?.record?.operation), migrating = isMigration(operation?.record?.operation);
       const installProgress = operation?.installProgress;
       const logChunks = boundedLogs(operation?.boundedlogs ?? operation?.boundedLogs ?? operation?.logs);
       const installView = installProgress ? h('p', { className: 'pud-inline' }, t('installProgress') + ': ',
@@ -830,7 +941,7 @@ window.__ModuleLoader__.load({
         h('p', { className: 'pud-muted pud-small' }, t('logBound')), h('pre', { className: 'pud-json', tabIndex: 0 },
           logChunks.map(chunk => [chunk.name, chunk.stream, chunk.text].filter(Boolean).join(' · ')).join('\n'))) : null;
       const progress = !selfPending && normalBusy || pollNotice ? h('section', { className: 'pud-card', 'aria-live': 'polite' },
-        h('h2', null, t(pollNotice || ['unknown','interrupted'].includes(currentPhase) ? 'progressUnknown' : snapshot?.externalBusy && !operationId ? 'externalBusy' : staging ? 'staging' : currentPhase === 'waiting' ? 'waiting' : recovering ? 'restoring' : 'running')),
+        h('h2', null, t(pollNotice || ['unknown','interrupted'].includes(currentPhase) ? 'progressUnknown' : snapshot?.externalBusy && !operationId ? 'externalBusy' : staging ? 'staging' : currentPhase === 'waiting' ? 'waiting' : migrating ? 'migratingSource' : recovering ? 'restoring' : 'running')),
         h('p', { className: 'pud-muted' }, t(pollNotice || ['unknown','interrupted'].includes(currentPhase) ? 'progressUnknownDetail' : staging ? 'stagingDetail' : currentPhase === 'waiting' ? 'waitingDetail' : 'runningDetail')),
         h('p', { className: 'pud-muted pud-small' }, t('continuing')),
         operation?.waiting ? h('p', { className: 'pud-muted pud-small' }, t('activeTasks') + ': ' + valueOf(operation.waiting.runningAgents, t('unknown'))) : null,
@@ -842,7 +953,7 @@ window.__ModuleLoader__.load({
           h('div', { style: { marginTop: 8 } }, h('button', { type: 'button', className: 'pud-btn', disabled: !!pending,
             onClick: () => { setPollNotice(''); setPollEpoch(value => value + 1); void refresh(); } }, t('checkProgress')))) : null) : null;
       const results = operation?.record ? h('section', { className: 'pud-card' },
-        h('h2', null, t(isRestore(operation.record.operation) ? 'restoreResults' : terminalPhase(operation.phase) ? 'finished' : 'batchResults')),
+        h('h2', null, t(isMigration(operation.record.operation) ? 'migrationResults' : isRestore(operation.record.operation) ? 'restoreResults' : terminalPhase(operation.phase) ? 'finished' : 'batchResults')),
         terminalPhase(operation.phase) ? h('p', { className: 'pud-muted' }, t(operation.phase === 'finished' ? 'finishedDetail' : 'unknownOperation')) : null,
         operationItems.length ? h(BatchTable, { items: operationItems, t, onRestore: prepareRestore, busy: busy || !!pending, recoveries: currentItems }) : h('p', { className: 'pud-muted' }, t('noResults')),
         h('details', { className: 'pud-small', style: { marginTop: 12 } }, h('summary', null, t('detail')), h(SourceDetails, { value: operation, t }))) : null;
@@ -877,7 +988,7 @@ window.__ModuleLoader__.load({
         h('div', { className: 'pud-wrap' }, header, h('div', { className: 'pud-note pud-muted', role: 'note' }, t('safety')), failure,
           snapshot?.persistenceWarning ? h('div', { className: 'pud-note pud-warning', role: 'status' }, t('persistence') + ': ', string(snapshot.persistenceWarning)) : null,
            snapshot?.truncationWarning ? h('div', { className: 'pud-note pud-muted', role: 'status' }, t('historyTruncated')) : null,
-          pending ? h('div', { className: 'pud-inline pud-muted', role: 'status', 'aria-live': 'polite' }, h('span', { className: 'pud-spinner', 'aria-hidden': true }), t(pending === 'scan' ? 'scanning' : pending === 'prepare-restore' ? 'reviewingRestore' : 'loading')) : null,
+          pending ? h('div', { className: 'pud-inline pud-muted', role: 'status', 'aria-live': 'polite' }, h('span', { className: 'pud-spinner', 'aria-hidden': true }), t(pending === 'scan' ? 'scanning' : pending === 'prepare-migration' ? 'reviewingMigration' : pending === 'prepare-restore' ? 'reviewingRestore' : 'loading')) : null,
           h(ClientSync, { state: clientSync, retryClient, t }), selfView, progress, results, mainList, detailView, history, limits),
         plan ? h(ConfirmDialog, { plan, t, locale, onCancel: () => setPlan(null), onConfirm: policy => { void commit(policy); } }) : null);
     }

@@ -27,7 +27,7 @@ async function fixture(t, { gate, hostFailure = false, git = false } = {}) {
             calls.push(args); started.resolve(); await held.promise;
             if (hostFailure) return { from: '0.3.0', to: '0.4.0', step: 'install', result: { changed: true, application: 'failed', stage: 'enable', target: SELF, error: { code: 'owned-failure', diagnostic: 'Fixture activation failed' } }, restore: { changed: true, application: 'applied', stage: 'enable', target: SELF } };
             bundle.version = '0.4.0';
-            if (git) bundle.source = args[2].spec;
+            if (git) bundle.source = args[2].spec; else bundle.source = SELF+'@0.4.0';
             return { from: '0.3.0', to: '0.4.0', step: 'install', result: { changed: true, application: 'applied', stage: 'enable', target: SELF, bundle: SELF, version: '0.4.0' } };
         },
     };
@@ -208,6 +208,128 @@ test('concurrent confirmed handoffs cannot both reserve one profile', async t =>
     assert.equal(answers.filter(answer => answer.status === 'fulfilled').length, 1);
     f.held.resolve(); await Promise.all([f.coordinator.job?.work, other.job?.work]);
     assert.equal(f.calls.length, 1);
+});
+
+test('self scan distinguishes mirror no-newer state from strict official fallback refusal', async t => {
+    const f=await fixture(t); f.manager.listVersions=async()=>({status:'listed',registry:null,versions:[]});
+    f.manager.registries=async()=>({registry:null,resolved:'https://registry.npmmirror.com',fallbackRegistries:[]});
+    let answer=await f.coordinator.scan();
+    assert.equal(answer.versionStatus,'up-to-date');assert.equal(answer.updateStatus,'no-update');assert.equal(answer.registry,'https://registry.npmmirror.com');
+    assert.equal(answer.publicMirror,true);assert(answer.infoWarnings.includes('public-mirror-may-lag'));assert.equal(f.calls.length,0);
+    f.manager.registries=async()=>({registry:null,resolved:'https://registry.npmjs.org',fallbackRegistries:['https://registry.npmmirror.com']});
+    answer=await f.coordinator.scan();assert.equal(answer.versionStatus,'up-to-date');assert(answer.reasons.includes('self-host-registry-plan-unsupported'));
+});
+
+test('null self query origin can resolve to public npm without bypassing strict preflight or saved plan', async t => {
+    const f=await fixture(t);f.manager.listVersions=async()=>({status:'listed',registry:null,versions:[{version:'0.4.0',bundle:true}]});
+    f.manager.registries=async()=>({registry:null,resolved:'https://registry.npmjs.org',fallbackRegistries:[]});
+    assert.equal((await f.coordinator.scan()).canUpdate,true);
+    const plan=await f.coordinator.prepare('0.4.0');assert(plan.ticket);assert.equal(f.calls.length,0);
+});
+
+test('self source transition during null query stays unknown and cannot issue a ticket', async t => {
+    const f=await fixture(t);let step=0;
+    f.manager.listVersions=async()=>({status:'listed',registry:null,versions:[]});
+    f.manager.registries=async()=>({registry:null,resolved:++step%2?'https://registry.npmjs.org':'https://registry.npmmirror.com',fallbackRegistries:[]});
+    const result=await f.coordinator.scan();assert.equal(result.versionStatus,'unknown');assert.equal(result.canUpdate,false);assert(result.reasons.includes('registry-origin-changed'));
+    await assert.rejects(()=>f.coordinator.prepare('0.4.0'));assert.equal(f.calls.length,0);assert.equal(f.coordinator.tickets.size,0);
+});
+
+test('self fallback added after confirmation is rejected before stopping tasks and Host handoff', async t => {
+    let entered=0;const f=await fixture(t,{gate:{cancellationTargets:()=>[],run:async()=>{entered++;}}});
+    const plan=await f.coordinator.prepare('0.4.0');
+    f.manager.registries=async()=>({registry:'https://registry.npmjs.org',resolved:'https://registry.npmjs.org',fallbackRegistries:['https://registry.npmmirror.com']});
+    // This fixture replaces byte preflight; use the real source-plan guard within the stub.
+    const {verifySelfRegistryPlan}=await import('../lib/self-update-policy.js');
+    f.options.preflight.check=async options=>{verifySelfRegistryPlan(options.registries,options.queryRegistry);return {};};
+    await f.coordinator.commit(plan.ticket,{taskPolicy:'cancel-active',confirmCancel:true});await f.coordinator.job?.work;
+    assert.equal(entered,0);assert.equal(f.calls.length,0);
+});
+
+test('incomplete higher self metadata cannot issue a ticket for a lower candidate', async t => {
+    const f=await fixture(t); f.manager.listVersions=async()=>({status:'listed',registry:'https://registry.npmjs.org',versions:[{version:'0.5.0',bundle:false,metadataIncomplete:true},{version:'0.4.0',bundle:true}]});
+    const answer=await f.coordinator.scan();assert.equal(answer.versionStatus,'unknown');assert.equal(answer.canUpdate,false);
+    await assert.rejects(()=>f.coordinator.prepare('0.4.0'));assert.equal(f.coordinator.tickets.size,0);assert.equal(f.calls.length,0);
+});
+
+test('self metadata becoming incomplete before tasks prevents cancellation and handoff', async t => {
+    let entered=0;const f=await fixture(t,{gate:{cancellationTargets:()=>[],run:async()=>{entered++;}}});
+    const plan=await f.coordinator.prepare('0.4.0');
+    f.manager.listVersions=async()=>({status:'listed',registry:'https://registry.npmjs.org',versions:[{version:'0.5.0',metadataIncomplete:true},{version:'0.4.0',bundle:true}]});
+    await f.coordinator.commit(plan.ticket,{taskPolicy:'cancel-active',confirmCancel:true});await f.coordinator.job?.work;
+    assert.equal(entered,0);assert.equal(f.calls.length,0);
+});
+
+test('self metadata becoming incomplete after idle waiting prevents Host handoff', async t => {
+    const f=await fixture(t,{gate:{cancellationTargets:()=>[],run:async operation=>{
+        f.manager.listVersions=async()=>({status:'listed',registry:'https://registry.npmjs.org',versions:[{version:'0.5.0',metadataIncomplete:true},{version:'0.4.0',bundle:true}]});
+        return operation(new AbortController().signal);
+    }}});
+    const plan=await f.coordinator.prepare('0.4.0');await f.coordinator.commit(plan.ticket);await f.coordinator.job?.work;assert.equal(f.calls.length,0);
+});
+
+test('self fallback added during byte preflight is caught before task handling', async t => {
+    let entered=0;const f=await fixture(t,{gate:{cancellationTargets:()=>[],run:async()=>{entered++;}}});
+    const plan=await f.coordinator.prepare('0.4.0'), check=f.options.preflight.check;
+    f.options.preflight.check=async options=>{const checked=await check(options);f.manager.registries=async()=>({registry:'https://registry.npmjs.org',resolved:'https://registry.npmjs.org',fallbackRegistries:['https://registry.npmmirror.com']});return checked;};
+    await f.coordinator.commit(plan.ticket,{taskPolicy:'cancel-active',confirmCancel:true});await f.coordinator.job?.work;
+    assert.equal(entered,0);assert.equal(f.calls.length,0);
+});
+
+test('self fallback added while publishing handoff preserves unknown and never dispatches or resends', async t => {
+    const f=await fixture(t), plan=await f.coordinator.prepare('0.4.0');
+    const original=f.coordinator.store.markHandedOff.bind(f.coordinator.store);
+    f.coordinator.store.markHandedOff=async id=>{await original(id);f.manager.registries=async()=>({registry:'https://registry.npmjs.org',resolved:'https://registry.npmjs.org',fallbackRegistries:['https://registry.npmmirror.com']});};
+    await f.coordinator.commit(plan.ticket);await f.coordinator.job?.work;
+    assert.equal(f.calls.length,0);assert.equal((await f.coordinator.state()).phase,'unknown');
+    await assert.rejects(()=>f.coordinator.prepare('0.4.0'),error=>error.code==='self-update-outcome-unknown');
+    assert.equal(f.calls.length,0);
+});
+
+test('mirror self plan requires extra consent and binds registry to one official Host handoff',async t=>{
+    const f=await fixture(t),mirror='https://registry.npmmirror.com';f.state.source=mirror;
+    f.manager.registries=async()=>({registry:null,resolved:mirror,fallbackRegistries:['https://registry.npmjs.org']});
+    const check=f.options.preflight.check;
+    const {verifySelfRegistryPlan}=await import('../lib/self-update-policy.js');
+    f.options.preflight.check=async options=>({...await check(options),registry:mirror,sourceMode:'public-mirror',publicMirror:true,hostRegistryPlan:verifySelfRegistryPlan(options.registries,mirror)});
+    const scan=await f.coordinator.scan();assert.equal(scan.canUpdate,true);assert.equal(scan.publicMirror,true);
+    let plan=await f.coordinator.prepare('0.4.0');assert.equal(plan.mirrorRiskRequiresAcknowledgement,true);assert.equal(plan.items[0].registry,mirror);
+    await assert.rejects(()=>f.coordinator.commit(plan.ticket),error=>error.code==='self-public-mirror-confirmation-required');assert.equal(f.calls.length,0);
+    plan=await f.coordinator.prepare('0.4.0');await f.coordinator.commit(plan.ticket,{confirmPublicMirror:true});await f.started.promise;
+    const job=f.coordinator.job;assert.equal(f.calls.length,1);assert.equal(f.calls[0][2].registry,mirror);
+    f.held.resolve();await job.work;const state=await f.coordinator.state();assert.equal(state.attempt.registry,mirror);assert.equal(state.attempt.confirmPublicMirror,true);assert.equal(state.verifiedApplied,true);
+});
+
+test('mirror canonical preflight evidence is mandatory before offering an update',async t=>{
+    const f=await fixture(t),mirror='https://registry.npmmirror.com';f.state.source=mirror;
+    f.manager.registries=async()=>({registry:mirror,resolved:mirror,fallbackRegistries:[]});
+    assert.equal((await f.coordinator.scan()).canUpdate,false);await assert.rejects(()=>f.coordinator.prepare('0.4.0'),error=>error.code==='self-public-mirror-preflight-unverified');assert.equal(f.calls.length,0);
+});
+
+test('confirmed mirror source or public fallback plan drift never reaches task handling',async t=>{
+    for(const drift of ['source','fallback']){
+        let entered=0;const f=await fixture(t,{gate:{cancellationTargets:()=>[],run:async()=>{entered++;}}}),mirror='https://registry.npmmirror.com';f.state.source=mirror;
+        let fallbacks=['https://registry.npmjs.org'];f.manager.registries=async()=>({registry:mirror,resolved:mirror,fallbackRegistries:fallbacks});
+        const check=f.options.preflight.check;const {verifySelfRegistryPlan}=await import('../lib/self-update-policy.js');
+        f.options.preflight.check=async options=>({...await check(options),registry:options.queryRegistry,sourceMode:'public-mirror',publicMirror:true,hostRegistryPlan:verifySelfRegistryPlan(options.registries,options.queryRegistry)});
+        const plan=await f.coordinator.prepare('0.4.0');if(drift==='source')f.state.source='https://registry.npmjs.org';else fallbacks=[];
+        await f.coordinator.commit(plan.ticket,{confirmPublicMirror:true,taskPolicy:'cancel-active',confirmCancel:true});await f.coordinator.job?.work;
+        assert.equal(entered,0);assert.equal(f.calls.length,0);
+    }
+});
+
+test('mirror public plan changing after wait or handoff publication never dispatches',async t=>{
+    for(const phase of ['after-wait','after-handoff']){
+        const f=await fixture(t),mirror='https://registry.npmmirror.com';f.state.source=mirror;
+        let fallbacks=['https://registry.npmjs.org'];f.manager.registries=async()=>({registry:mirror,resolved:mirror,fallbackRegistries:fallbacks});
+        const check=f.options.preflight.check,{verifySelfRegistryPlan}=await import('../lib/self-update-policy.js');
+        f.options.preflight.check=async options=>({...await check(options),registry:mirror,sourceMode:'public-mirror',publicMirror:true,hostRegistryPlan:verifySelfRegistryPlan(options.registries,mirror)});
+        const plan=await f.coordinator.prepare('0.4.0');
+        if(phase==='after-wait')f.coordinator.taskGate={cancellationTargets:()=>[],release:async()=>{},run:async operation=>{fallbacks=[];return operation(new AbortController().signal);}};
+        else{const mark=f.coordinator.store.markHandedOff.bind(f.coordinator.store);f.coordinator.store.markHandedOff=async id=>{await mark(id);fallbacks=[];};}
+        await f.coordinator.commit(plan.ticket,{confirmPublicMirror:true});await f.coordinator.job?.work;
+        assert.equal(f.calls.length,0);if(phase==='after-handoff'){assert.equal((await f.coordinator.state()).phase,'unknown');await assert.rejects(()=>f.coordinator.prepare('0.4.0'),error=>error.code==='self-update-outcome-unknown');}
+    }
 });
 
 test('private source, linked installation, busy and non-active Host never offer self-update', async t => {

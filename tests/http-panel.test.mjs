@@ -37,5 +37,5 @@ test('forwarded headers never substitute for trusted original authority',()=>{
 test('successful panel admission still requires confirmation ticket and stop consent is not invented',async()=>{
  const {handler,calls}=fixture();assert.equal((await handler(request({action:'commit'}))).status,400);assert.deepEqual(calls,[]);
  const result=await handler(request({action:'commit',ticket:'test-ticket'}));assert.equal(result.status,200);
- assert.deepEqual(calls[0],['commit','test-ticket',{taskPolicy:'wait-for-idle',confirmCancel:false}]);
+ assert.deepEqual(calls[0],['commit','test-ticket',{taskPolicy:'wait-for-idle',confirmCancel:false,confirmPublicMirror:false}]);
 });

@@ -210,6 +210,25 @@ test('byte-budget write failure preserves pending state rather than fabricating 
     await assert.rejects(() => access(join(root, attempt.id, 'result.json')), error => error.code === 'ENOENT');
 });
 
+test('mirror receipt binds acknowledgement registry and known-public Host plan across generations',async t=>{
+    const {root,redact,store}=await fixture(t),mirror='https://registry.npmmirror.com';
+    const input=target({registry:mirror,sourceMode:'public-mirror',publicMirror:true,confirmPublicMirror:true,hostRegistryPlan:{queryRegistry:mirror,registry:null,resolved:mirror,fallbackRegistries:['https://registry.npmjs.org']}});
+    const attempt=await store.start(input);assert.equal(attempt.schemaVersion,2);
+    const file=join(root,attempt.id,'attempt.json'),original=await readFile(file);
+    await store.markHandedOff(attempt.id);await store.finish(attempt.id,applied({registries:[mirror,source,'https://user:secret@private.example.invalid/']}));
+    const next=new SelfUpdateStore(root,redact),state=await next.latest();
+    assert.equal(state.attempt.registry,mirror);assert.equal(state.attempt.confirmPublicMirror,true);assert.deepEqual(state.attempt.hostRegistryPlan.fallbackRegistries,[source]);
+    assert.deepEqual(state.result.result.registries,[mirror,source,'<unsupported-registry>']);assert((await readFile(file)).equals(original));
+});
+
+test('mirror receipt without exact risk consent or plan cannot be created or reinterpreted',async t=>{
+    const {root,store}=await fixture(t),mirror='https://registry.npmmirror.com';
+    const input=target({registry:mirror,sourceMode:'public-mirror',publicMirror:true,confirmPublicMirror:true,hostRegistryPlan:{queryRegistry:mirror,registry:mirror,resolved:mirror,fallbackRegistries:[]}});
+    for(const change of [{confirmPublicMirror:false},{sourceMode:undefined},{publicMirror:false},{hostRegistryPlan:undefined},{registry:'https://other-mirror.invalid'}])await assert.rejects(()=>store.start({...input,...change}));
+    const attempt=await store.start(input);const file=join(root,attempt.id,'attempt.json');
+    for(const change of [{schemaVersion:1},{confirmPublicMirror:false},{registry:source}]){await writeFile(file,JSON.stringify({...attempt,...change}));assert.equal((await store.read(attempt.id)).phase,'unknown');}
+});
+
 test('exclusive concurrent starts never exceed the configured receipt cap', async t => {
     const { root, redact } = await fixture(t);
     const first = new SelfUpdateStore(root, redact, { maxAttempts: 1 }), second = new SelfUpdateStore(root, redact, { maxAttempts: 1 });

@@ -7,7 +7,7 @@ const staged={rows:[{id:'wsl-env-client-host',name:'dsh-plugin-wsl-env'},{id:'ws
 
 test('generation success requires exact target version, alias, enablement and active row',async()=>{
  const rows=[{patchId:'wsl-env-client-host',moduleName:'dsh-plugin-wsl-env',enabled:true,fiberPhase:'active'},{patchId:'wsl-status',moduleName:'dsh-plugin-wsl-env/_g/verified/status',enabled:true,fiberPhase:'active'}];
- const service=make({setBundleEnabled:async()=>({application:'applied',warnings:[]}),listBundles:async()=>[{name:'dsh-plugin-wsl-env',version:'0.26.2'}],listPlugins:async()=>rows});
+ const service=make({setBundleEnabled:async()=>({application:'applied',warnings:[]}),listBundles:async()=>[{name:'dsh-plugin-wsl-env',version:'0.26.2',enabled:true}],listPlugins:async()=>rows});
  const result=await service.verifyGeneration({name:'dsh-plugin-wsl-env',to:'0.26.2',enabled:true},staged,{application:'restart-required',restartReason:'unmanaged-plugin',warnings:[]});assert.equal(result.application,'applied');assert.equal(result.generationVerified,true);
  rows[1].enabled=false;await assert.rejects(()=>service.verifyGeneration({name:'dsh-plugin-wsl-env',to:'0.26.2',enabled:true},staged,{application:'applied'}),/did not activate/);
 });

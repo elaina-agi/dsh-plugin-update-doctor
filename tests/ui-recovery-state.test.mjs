@@ -23,7 +23,7 @@ test('recovery readiness requires Host eligibility, recorded version and recover
 });
 
 test('manual restore prepares by name only and never supplies an arbitrary version or archive', () => {
-    const restore = section('      const prepareRestore =', '      const commit =');
+    const restore = section('      const prepareRestore =', '      const prepareMigration =');
     assert(restore.includes("read('prepare-restore', { name }, 'POST'"));
     assert(restore.includes('isRestore(answer.operation)'));
     assert(restore.includes('answer.items[0].name === name'));

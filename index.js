@@ -27,7 +27,7 @@ export async function apply(ctx) {
     const service = new DoctorService({
         manager, profile, runtimeVersion: getDshRuntimeVersion(),
         resolvePackage: async packageName => resolveBundleDir('dsh', packageName, profile.installAnchor, profile.dir),
-        probeLocks, statePath: join(profile.home, 'cache', 'dsh-plugin-update-doctor', profile.name, 'history.json'), taskGate, stager,
+        probeLocks, statePath: join(profile.home, 'cache', 'dsh-plugin-update-doctor', profile.name, 'history.json'), taskGate, stager, hmrAvailable:!!ctx.get('hmr'),
     });
     await service.initialize();
     const selfUpdate = new SelfUpdateCoordinator({ manager, profile, taskGate,

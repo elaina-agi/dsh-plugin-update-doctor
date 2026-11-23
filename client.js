@@ -463,7 +463,7 @@ window.__ModuleLoader__.load({
     const isSelf = operation => operation === 'host-self-update';
     const isRestore = operation => operation === 'batch-restore';
     const isMigration = operation => operation === 'source-migration';
-    const migrationEligible = item => false;
+    const migrationEligible = item => item?.canMigrate === true && item.name !== 'dsh-plugin-update-doctor' && item.name !== 'dsh-plugin-wsl-env';
     const mirrorAcknowledgementRequired = plan => plan?.mirrorRiskRequiresAcknowledgement === true || array(plan?.items).some(item => item?.mirrorRiskRequiresAcknowledgement === true || item?.publicMirror === true || item?.sourceMode === 'public-mirror' || safeQueryOrigin(item?.registry) === 'https://registry.npmmirror.com');
     const operationResultTitle = operation => isMigration(operation) ? 'migrationResults' : isRestore(operation) ? 'restoreResults' : 'batchResults';
     const resultStatus = item => item?.installMode === 'registry-migration' && item.status === 'updated' ? 'migrated' : string(item?.status) || 'unknown';
@@ -554,6 +554,38 @@ window.__ModuleLoader__.load({
         error ? h('p', { className: 'pud-error', role: 'alert' }, error) : null,
         raw.length > preview.length ? h('p', { className: 'pud-muted pud-small' }, t('detailTruncated')) : null,
         h('pre', { className: 'pud-json', tabIndex: 0 }, preview));
+    }
+    function DetailArchiveCheck({ subject, t, openPanel }) {
+      const [item, setItem] = useState(null), [pending, setPending] = useState(false), [notice, setNotice] = useState('');
+      const current = useRef(null), mounted = useRef(true);
+      useEffect(() => { mounted.current = true; setItem(null); setNotice(''); setPending(false); return () => { mounted.current = false; current.current?.abort(); }; }, [subject.pkg.name, subject.pkg.version]);
+      const check = async () => {
+        if (pending) return;
+        current.current?.abort();
+        const controller = new AbortController(); current.current = controller; setPending(true); setNotice(''); setItem(null);
+        const acceptsResult = () => mounted.current && current.current === controller && !controller.signal.aborted;
+        try {
+          const snapshot = await request('list', {}, 'GET', controller.signal, 45000);
+          controller.signal.throwIfAborted();
+          const record = verifiedDetailRecord(subject, snapshot);
+          if (!record) { if (acceptsResult()) setNotice('detailDoctorUnmanaged'); return; }
+          const answer = await request('scan', {}, 'GET', controller.signal, 180000);
+          const checked = array(answer?.items).find(row => row?.name === record.name && row.version === record.version);
+          if (!checked) throw new Error('No matching version result');
+          if (acceptsResult()) setItem(checked);
+        } catch (error) { if (acceptsResult()) setNotice('requestFailed'); }
+        finally { const active = acceptsResult(); if (current.current === controller) current.current = null; if (active) setPending(false); }
+      };
+      return h('section', { className: 'pud-card', 'data-testid': 'pud-official-archive-check' }, h('style', null, CSS),
+        h('h2', null, t('detailDoctorTitle')), h('p', { className: 'pud-muted pud-small' }, t('detailDoctorHelp')),
+        h('p', { className: 'pud-muted pud-small' }, t('detailDoctorReadOnly')),
+        h('div', { className: 'pud-inline' }, h('button', { type: 'button', className: 'pud-btn', disabled: pending, 'aria-busy': pending, onClick: () => { void check(); }, 'data-testid': 'pud-detail-doctor-check' }, t(pending ? 'scanning' : 'detailDoctorProbe')),
+          typeof openPanel === 'function' ? h('button', { type: 'button', className: 'pud-btn', onClick: openPanel, 'data-testid': 'pud-detail-doctor-open' }, t('detailDoctorOpen')) : null),
+        item ? h('div', { className: 'pud-note' }, h(VersionValue, { item, t }), h(VersionState, { item, t }),
+          array(item.reasons).length ? h('ul', { className: 'pud-list' }, ...item.reasons.map((reason, i) => h('li', { key: i }, localText(t, 'reason.' + string(reason), string(reason) || t('unknown'))))) : null,
+          h(InformationWarnings, { item, t })) : null,
+        notice ? h('p', { className: notice === 'requestFailed' ? 'pud-error' : 'pud-muted', role: 'status' }, t(notice)) : null,
+        h('p', { className: 'pud-muted pud-small' }, t('detailDoctorManual')));
     }
     function Finding({ finding, t }) {
       if (!finding) return null;
@@ -821,6 +853,17 @@ window.__ModuleLoader__.load({
           else setError({ code: 'state-changed', diagnostic: array(answer.reasons).join('; ') });
         } catch (issue) { if (mounted.current) setError(errorInfo(issue)); } finally { if (mounted.current) setPending(''); }
       };
+      const prepareMigration = async name => {
+        const target = currentItems.get(name) ?? byName.get(name);
+        if (pending || busy || checked.size || !migrationEligible(target)) return;
+        setPending('prepare-migration'); setError(null); setPlan(null);
+        try {
+          const answer = await read('prepare-migration', { name }, 'POST', 180000);
+          if (!mounted.current) return;
+          if (typeof answer.ticket === 'string' && !answer.blocked && isMigration(answer.operation) && array(answer.items).length === 1 && answer.items[0].name === name && answer.items[0].from === answer.items[0].to && answer.items[0].installMode === 'registry-migration') setPlan(answer);
+          else setError({ code: 'state-changed', diagnostic: array(answer.reasons).join('; ') });
+        } catch (issue) { if (mounted.current) setError(errorInfo(issue)); } finally { if (mounted.current) setPending(''); }
+      };
       const commit = async ({ taskPolicy = 'wait-for-idle', confirmCancel, confirmPublicMirror } = {}) => {
         if (!plan || pending) return; const ticket = plan.ticket; setPlan(null); setPending('commit'); setError(null); setOperation(null);
         try {
@@ -1000,6 +1043,13 @@ window.__ModuleLoader__.load({
           const t = scope.locale.bind(NS);
           scope.slots.inject('sidebar.panellist', function* () {
             yield scope.slots.register({ name: 'sidebar.panellist', id: PANEL_ID, order: 35, label: () => t('panel'), locale: NS }, ({ size }) => h(DoctorIcon, { size }));
+          });
+          scope.slots.inject('plugins.detail.section', function* () {
+            yield scope.slots.register({ name: 'plugins.detail.section', id: 'plugin-update-doctor-archive-versions', order: 35, locale: NS,
+              inject: () => {
+                const layout = scope.get('layout');
+                return { openPanel: typeof layout?.selectPanel === 'function' ? () => layout.selectPanel(PANEL_ID) : undefined };
+              } }, props => detailSubjectCandidate(props.subject) ? h(DetailArchiveCheck, { subject: props.subject, t: props.t, openPanel: props.openPanel }) : null);
           });
           scope.slots.inject('main', function* () {
             yield scope.slots.register({ name: 'main', key: PANEL_ID, locale: NS, inject: () => ({

@@ -24,14 +24,14 @@ test('a tampered prepared archive never reaches task stopping or plugin removal'
 test('an external package appearing after removal is not overwritten or automatically removed', async t => {
     const { service, state, calls, bundles } = await serviceFixture(t); state.afterRemove = b => Object.assign(b, { installed: true, version: '9.0.0', source: 'external@9.0.0' });
     const plan = await service.prepareBatch([{ name: 'sample-plugin', version: '1.1.0' }]); const start = await service.commit(plan.ticket); await service.jobs.get(start.operationId).work;
-    assert.equal(bundles[0].version, '9.0.0'); assert.deepEqual(calls, [['remove', 'sample-plugin']]); assert.equal(service.recoveryFor('sample-plugin'), undefined);
+    assert.equal(bundles[0].version, '9.0.0'); assert.deepEqual(calls.map(call=>call.slice(0,2)), [['update','sample-plugin@1.1.0'],['remove','sample-plugin']]); assert.equal(service.recoveryFor('sample-plugin'), undefined);
 });
-test('installed identities survive history rotation and reload but never match another same-version archive', async t => {
+test('registry updates do not become local archive identities after history rotation or reload', async t => {
     const { service } = await serviceFixture(t); const plan = await service.prepareBatch([{ name: 'sample-plugin', version: '1.1.0' }]); const start = await service.commit(plan.ticket); await service.jobs.get(start.operationId).work;
-    const raw = (await service.snapshot()).bundles[0]; assert(service.lineageOf(raw));
-    assert.equal(service.lineageOf({ ...raw, source: raw.source.replace(/[^/\\]+[\\/]package.tgz$/, 'other/package.tgz') }), null);
+    const raw = (await service.snapshot()).bundles[0]; assert.equal(raw.update,'registry');assert.equal(raw.source,'sample-plugin@1.1.0');assert.equal(service.lineageOf(raw),null);
     for (let i = 0; i < 90; i++) await service.store.put({ id: 'noise-' + i, package: 'other', phase: 'settled' });
-    assert(service.lineageOf(raw)); const reload = new IdentityStore(service.identities.path); await reload.load(); assert.equal(reload.get(raw.name).sha256, service.lineageOf(raw).sha256);
+    const reload = new IdentityStore(service.identities.path); await reload.load(); assert.equal(reload.get(raw.name),undefined);
+    assert.equal((await service.list()).bundles[0].canUpdate,true);
     const serialized = await readFile(service.identities.path, 'utf8'); assert(!serialized.includes(service.profile.home));
 });
 

@@ -7,8 +7,9 @@ test('target verification remains separate from automatic old-version restoratio
     const plan = await service.prepareBatch([{name:'sample-plugin',version:'1.1.0'}]);
     const start = await service.commit(plan.ticket);await service.jobs.get(start.operationId).work;
     const item=service.operation(start.operationId).record.items[0];
-    assert.equal(item.result.application,'failed');assert.equal(item.verification.package.version,'1.1.0');
-    assert.equal(item.verification.host.status,'inactive');assert.equal(item.restore.application,'applied');
+    assert.equal(item.result.application,'failed');assert.equal(item.verification.package.expectedVersion,'1.1.0');
+    assert.equal(item.verification.package.version,'1.0.0','Host rollback has already completed when the result is observed');
+    assert.equal(item.verification.host.status,'unknown');assert.equal(item.restore.application,'applied');
     assert.equal(item.restoreVerification.package.version,'1.0.0');assert.equal(item.restoreVerification.host.status,'active');
 });
 test('a persisted interrupted batch reads as unknown rather than finished', async t => {

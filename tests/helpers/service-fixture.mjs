@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { RegistryStager } from '../../lib/staging.js';
 import { DoctorService } from '../../lib/service.js';
 import { TaskGate } from '../../lib/task-gate.js';
+import { archiveEntries } from '../../lib/generation.js';
 
 export function tar(entries) {
     const parts = [];
@@ -35,11 +36,37 @@ export async function serviceFixture(t, { names = ['sample-plugin'], failTarget 
         await writeFile(join(root, bundle.name, 'index.js'), 'export function apply(){}');
     }
     const manager = {
+        registries:async()=>({registry:state.registry,resolved:state.registry,fallbackRegistries:[]}),
         listBundles: async () => structuredClone(bundles),
-        listPlugins: async () => bundles.filter(b => b.installed).map(b => ({ entryId: 'include:' + b.name + '-feature', patchId: b.name + '-feature', moduleName: b.name, enabled: b.enabled, fiberPhase: b.failed ? 'failed' : 'active' })),
+        listPlugins: async () => bundles.filter(b => b.installed && b.enabled).map(b => ({ entryId: 'include:' + b.name + '-feature', patchId: b.name + '-feature', moduleName: b.name, enabled: true, fiberPhase: b.failed ? 'failed' : 'active' })),
         listVersions: async name => ({ status: 'listed', registry: state.registry, installed: bundles.find(b => b.name === name).version, versions: [{ version: '1.1.0', bundle: true }, { version: '2.0.0', bundle: true, incompatible: { requirements: { dsh: '99' } } }] }),
         removeBundle: async name => { calls.push(['remove', name]); const b = bundles.find(b => b.name === name); b.installed = false; b.enabled = false; b.rows = []; state.afterRemove?.(b); return { application: 'applied', stage: 'remove' }; },
-        installBundle: async (path, options) => { calls.push(['install', options.expected.name + '@' + options.expected.version, options.requestId]); const b = bundles.find(b => b.name === options.expected.name); Object.assign(b, { installed: true, version: options.expected.version, enabled: options.enabled, source: 'file:' + path, update: undefined, rows: [{ rowId: b.name + '-feature', moduleName: b.name, entryId: 'include:' + b.name + '-feature' }] }); b.failed = options.expected.version === '1.1.0' ? state.failTarget : state.failRestore; state.afterInstall?.(b); return { application: b.failed ? 'failed' : 'applied', stage: 'enable', version: b.version, bundle: b.name, error: b.failed ? { code: 'operation-error', diagnostic: 'fixture activation failed password=hidden' } : undefined }; },
+        installBundle: async (path, options) => {
+            calls.push(['install', options.expected.name + '@' + options.expected.version, options.requestId]);
+            const b = bundles.find(b => b.name === options.expected.name), registrySpec=path===`${b.name}@${options.expected.version}`;
+            Object.assign(b, { installed:true, version:options.expected.version, enabled:options.enabled, source:registrySpec?path:'file:'+path, update:registrySpec?'registry':undefined, rows:[{rowId:b.name+'-feature',moduleName:b.name,entryId:'include:'+b.name+'-feature'}] });
+            const staged=await stager.stage(b.name,b.version);
+            const {readFile}=await import('node:fs/promises');
+            for (const entry of archiveEntries(await readFile(staged.sourceArchivePath))) {
+                const target=join(root,b.name,entry.name.slice(8));await mkdir(join(target,'..'),{recursive:true});await writeFile(target,entry.bytes);
+            }
+            b.failed=options.expected.version==='1.1.0'?state.failTarget:state.failRestore;state.afterInstall?.(b);
+            return {application:b.failed?'failed':'applied',stage:'enable',version:b.version,bundle:b.name,error:b.failed?{code:'operation-error',diagnostic:'fixture activation failed password=hidden'}:undefined};
+        },
+        updateBundle:async(name,version,options)=>{
+            calls.push(['update',`${name}@${version}`,options.requestId]);
+            const before=structuredClone(bundles.find(value=>value.name===name));
+            const removed=await manager.removeBundle(name);
+            if(removed.application!=='applied')return {from:before.version,to:version,step:'remove',result:removed};
+            if(bundles.find(value=>value.name===name).installed)return {from:before.version,to:version,step:'install',result:{application:'failed',stage:'install',error:{code:'external-target-appeared'}}};
+            const result=await manager.installBundle(`${name}@${version}`,{...options,expected:{name,version},enabled:before.enabled,saveExact:true});
+            let restore;
+            if(result.application==='failed') {
+                await manager.removeBundle(name);
+                restore=await manager.installBundle(`${name}@${before.version}`,{expected:{name,version:before.version},enabled:before.enabled,saveExact:true,requestId:'owned-host-restore'});
+            }
+            return {from:before.version,to:version,step:'install',result,...restore?{restore}:{}};
+        },
     };
     const taskGate = gate ?? new TaskGate({ list: () => [] });
     const service = new DoctorService({ manager, profile: { dir: root, home: root, name: 'test' }, runtimeVersion: '0.2.2-rc.3', resolvePackage: async name => join(root, name), probeLocks: async () => ({ status: 'checked', files: [] }), statePath: join(root, 'cache', 'dsh-plugin-update-doctor', 'test', 'history.json'), taskGate, stager });

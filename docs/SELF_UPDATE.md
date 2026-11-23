@@ -24,7 +24,9 @@
 
 仅准已检查的自身 bundle 和客户端声明：单个自身 patch 行、固定 exports、Host peers和 engines不变。目标只允许固定 `yaml: 2.9.1`，当前实际 YAML也必须为2.9.1；不接受依赖图、未知生命周期脚本、新原生模块或宿主接管变化。只读原生助手固定到已审查 SHA256，普通插件的保护策略不因此放宽。
 
-npm路径查询来源必须是公共 npm。**Host registry plan不能包含 fallback，也不能隐式使用私有源／镜像。** 当前官方默认配置可能含镜像 fallback；这种情况下 npm自更新会明确拒绝，而不是擅自改宿主配置。Git路径使用下述独立来源规则。
+npm官方路径保留严格公共源／无fallback政策。v0.5.1开发版另增固定公共镜像 `https://registry.npmmirror.com` 自身交接：镜像旧／新归档及运行元数据必须与官方同版本匹配；宿主primary/resolved/fallback只允许两已知公共源，计划完整绑定、反复核验并要求额外 `confirmPublicMirror`。镜像缺包不自动换源，当前查询无新版只代表镜像结果，不索取凭据、不改宿主配置。Git路径使用独立来源规则。
+
+v0.5.1 开发修复将来源内版本发现与自身升级资格分开。无较新版本仍可明确显示来源条件不满足；`registry: null` 按公开 `manager.registries().resolved` 的查询前后稳定快照解释，未知／变化来源保持不准入，不从最后一次配置推断此前的来源。完整字节预检结束后和 handoff记录写入后、dispatch前重验确认的来源计划（官方严格无fallback，镜像仅已确认公共计划）；准备、停止任务前和等待后拒绝不完整版本候选。原schema1保持可读，镜像单独schema2绑定来源及额外同意；不将一般扫描字段写入不可覆盖receipt。检查不是原子配置锁或CAS，不能排除外部ABA。
 
 等待前和临近交接时重新核验目标资格、安装源、当前包状态、依赖及新旧归档。票据短时、一次性；任意包名／命令／路径输入不被接受。诊断工具只提供无票据计划，不能确认或执行。
 
@@ -38,6 +40,8 @@ npm路径查询来源必须是公共 npm。**Host registry plan不能包含 fall
 - 交接调用一次公开 `updateBundle(name, version, { spec: fixedCommitSpec, requestId })`，不直接安装覆盖自身，也不启动外部更新工作器。宿主保存新固定提交并在失败时尝试恢复捕获的旧来源；该恢复没有目标expected校验，因此本插件另核验旧文件／来源／Host。
 - **依赖源沿用宿主现有配置**，不给Git交接传registry覆盖，不修改fallback、不自动批准脚本。固定YAML和锁文件是静态准入，不保证宿主下载的依赖字节等同预检，也不宣称Git路径具备npm public-only保证。
 - 缺最终结果仍未知；新实例必须同时核验实际版本、文件、固定来源和active Host才标为已验证应用。需要重启也如实显示，不自动重启。
+
+镜像新增schema2 attempt绑定所选registry、净化Host计划和额外同意；原official/Git schema1双读不覆写，缺字段保持未知。Host重新下载并可能使用已确认公共fallback，预检并非精确归档事务；实际来源字段只证明npm管理身份，不是网络传输字节证明。实际隔离验证与剩余边界见[Windows支持](<WINDOWS_SUPPORT.md>)。
 
 ## 跨代结果
 

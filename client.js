@@ -1035,7 +1035,7 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
         selfState.phase === 'waiting' ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending, onClick: () => { void cancelSelfWait(); } }, t('cancelWait')) : null,
         h('details', null, h('summary', null, t('detail')), h(SourceDetails, { value: selfState, t }))) : null;
       const header = h('header', { className: 'pud-header' },
-        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.5.0')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
+        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.5.3')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
           h('div', { className: 'pud-meta pud-muted' }, h('span', null, t('profile') + ': ', valueOf(snapshot?.profile, t('noValue'))), h('span', null, t('runtime') + ': ', valueOf(snapshot?.runtimeVersion, t('noValue'))))),
         h('div', { className: 'pud-toolbar' },
           h('button', { type: 'button', className: 'pud-btn', disabled: !!pending, onClick: () => { void refresh(); }, 'data-testid': 'pud-refresh' }, t('refresh')),

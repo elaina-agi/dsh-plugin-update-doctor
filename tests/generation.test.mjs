@@ -15,5 +15,5 @@ test('generational repack preserves runtime bytes and bare browser anchor',()=>{
  assert(patch.includes('name: dsh-plugin-wsl-env\n'));assert(patch.includes('dsh-plugin-wsl-env/_g/'));
  assert.equal(entries.find(x=>x.name==='package/lib/status.js').bytes.toString(),'export const name="status";');
  assert.equal(entries.find(x=>x.name==='package/'+result.generation+'/lib/status.js').bytes.toString(),'export const name="status";');
- assert.equal(isGenerationSupported(manifest),true);assert.equal(isGenerationSupported({...manifest,version:'99.0.0'}),false);
+ assert.equal(isGenerationSupported(manifest),true);assert.equal(isGenerationSupported({...manifest,version:'99.0.0'}),true); // Candidate recognition is not archive admission.
 });

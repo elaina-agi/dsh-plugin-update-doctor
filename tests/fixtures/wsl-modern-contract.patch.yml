@@ -1,0 +1,524 @@
+# Declarative test fixture from dsh-plugin-wsl-env 0.28.0 (MIT). See WSL_UPSTREAM_LICENSE.txt.
+# The bundle layer this package contributes:
+#
+#     "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+#
+# `dsh plugin --profile <name> add dsh-plugin-wsl-env` installs the package and
+# appends this file as one layer — there is nothing to merge by hand. It is
+# still an ordinary patch layer: a top-level YAML array of loader patch entries
+# (id-targeted config overrides, disables, and insert lists; `!!js` expressions
+# allowed).
+#
+# Layers compose in the order bundles, the profile's own `cordis.patch.yml`,
+# the home-level `cordis.patch.yml`, then `--patch` overlays, and later layers
+# win per row. A row's `config` is replaced whole, never deep-merged, so a user
+# who wants a different value overrides that row by id in their own layer —
+# examples/profile.cordis.patch.yml shows what such a layer looks like.
+#
+# ═════════════════════════════════════════════════════════════════════════════
+# The GUI terminal window is a COMPOSITION-level environment, not a preset one.
+#
+# The right-sidebar terminal is dsh-api-terminal-controller. It resolves its
+# execution world from the Session's own context —
+#     agent.ctx.get("subprocess")
+# — and that context is created by the agent loop under the ROOT realm
+# (dsh-agent-loop: `createScope(loopCtx, …)`, loopCtx = the root `ctx.agents`),
+# while a preset's isolate realms are created by dsh-agent-preset-registry under
+# the REGISTRY's context (`createScope(this.owner, …)`). The two subtrees never
+# meet, so a `subprocess` provider mounted inside preset-wsl — the natural-looking
+# design, since `shell` and `fs` live there — is invisible to the terminal
+# window. The registry ships `agentPresets.serviceFor(agent, name)` for exactly
+# that gap; the terminal controller does not use it.
+#
+# So the terminal is bound here, once, for the whole composition:
+#
+#   1. the shipped local provider is disabled and replaced by a subclass whose
+#      ONLY override is `spawnTerminal`, which rewrites a `wsl.exe` launch into
+#      `wsl.exe -d <distro> --cd <linux dir>` for the directory the Session
+#      supplies. Ordinary `spawn()` — every command, the host ripgrep search,
+#      every other consumer — reaches the shipped implementation untouched;
+#   2. the controller is given the composition's default shell profile (the
+#      distro shell, so a directory-less launch lands in the distro rather than
+#      `cmd.exe` inside a UNC workspace) plus host candidates. The default must
+#      stay static — the controller resolves it without a Session — but the
+#      candidates make the shell menu honest: `wsl.exe` dedupes into the
+#      default's `wsl` kind, and `powershell`/`cmd` are launches this terminal
+#      really starts (host sessions run PowerShell outright, and a manually
+#      selected shell is titled after itself — the sanctioned bridge over the
+#      fixed tab title, see docs/UPSTREAM-TERMINAL-TITLE.md).
+#
+# Consequence: a terminal's EXECUTION WORLD follows the Session — a WSL-folder
+# session runs the distro's shell, a Windows-folder session runs PowerShell in
+# its own directory (`hostSessions` on `subprocess-wsl`) — while the DEFAULT
+# entry and its title stay the composition's single `WSL` profile, which no
+# Session identity reaches. The title that implies is documented in
+# docs/LIMITATIONS.md and bridged upstream in docs/UPSTREAM-TERMINAL-TITLE.md.
+# ═════════════════════════════════════════════════════════════════════════════
+- id: subprocess
+  disabled: true
+
+- id: terminal-controller
+  name: '@deepseek-ai/dsh-api-terminal-controller'
+  config:
+    shell:
+      path: wsl.exe
+      name: WSL
+      args: []
+    shellCandidates:
+      - wsl.exe
+      - powershell
+      - cmd
+
+- insert:
+    - id: subprocess-wsl
+      name: 'dsh-plugin-wsl-env/subprocess'
+      config:
+        # auto: follow the launch directory's UNC distro; "default" forces WSL's
+        # default, and a name pins. Empty is auto.
+        distro: ''
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Environment is per-session, not per-process.
+#
+# There is no DSH_WSL switch any more. The profile keeps the SHIPPED environment
+# for host workspaces — sandboxed PowerShell executor, ACL-confined filesystem,
+# and therefore the Permissions selector — while the wsl agent preset (appended
+# below) supplies the WSL environment to agents that select it, isolated to that
+# preset's own service realm. Both can run at the same time in one process.
+#
+# dsh-plugin-wsl-env/auto-preset binds the WSL preset automatically when a new
+# session's workspace directory is inside a distro, and leaves an explicit
+# operator choice alone.
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ── The workspace picker serves BOTH worlds ──────────────────────────────────
+#
+# Kept from the previous design: the shipped chooser resolves to the native OS
+# dialog on Windows, which cannot browse a distro. This one lists the Windows home
+# directory and every installed distro in its root level, so it is the single
+# picker for host and WSL workspaces alike — and the directory it returns is what
+# auto-preset reads to choose the environment.
+- id: directory-picker
+  disabled: true
+
+- insert:
+    - id: directory-picker-wsl
+      name: 'dsh-plugin-wsl-env/picker'
+      config:
+        preferredDistro: ''
+        includeHostHome: true
+        maxEntries: 1000
+
+    - id: directory-picker-browse-surface
+      name: '@deepseek-ai/dsh-client-ui-directory-picker-browse'
+
+# ═════════════════════════════════════════════════════════════════════════════
+# The distro-side takeover of the root-plane filesystem.
+#
+# A patch layer is a flat list: an `id:` entry patches the shipped row, and a
+# bare `insert:` list appends new rows as data. A disable written INSIDE an
+# insert list is not a patch — it becomes a duplicate-id data row that shadows
+# the real service row (the loader keys rows by id, last occurrence wins), and
+# a nested `insert:` list is never interpreted at all. This takeover is
+# therefore two top-level entries: disable the shipped row by id, then append
+# the replacement with a bare insert. test/composition.test.mjs runs this file
+# through the real patch algorithm to keep the shape honest.
+# ═════════════════════════════════════════════════════════════════════════════
+
+# The GUI file service keeps the shipped `workspace-files` row: its client half
+# is the browser `file` resource provider the Sidebar previews need, and a
+# server-only replacement drops it (docs/LIMITATIONS.md). The shipped service
+# reads WSL paths through the routed root filesystem below, so the GUI file tree
+# and previews still run inside the distro, at the cost of a few extra agent
+# round trips.
+
+# The root-plane filesystem routes by coordinate: distro UNC identities are
+# served by the resident agent (real watch events, ext4 reads), drive paths
+# stay host-native. Replaces the root fs-sandbox row, whose write fence has no
+# root-plane consumers (the model's writes ride the preset filesystems; see
+# docs/root-fs-routing.md).
+- id: fs-sandbox
+  disabled: true
+
+# The shipped `working_directory` tool prints the host-canonical UNC spelling
+# (`fs.processPath()`), which the distro shell cannot resolve — the same
+# failure mode the cwd rewrite below removes. Disable the shipped row by id
+# (a top-level entry: a disable inside an insert list is duplicate-id data,
+# see the comment above), then mount the replacement in the insert list.
+- id: tool-working-directory
+  disabled: true
+
+- insert:
+    # ═════════════════════════════════════════════════════════════════════════════
+    # The web client host half.
+    #
+    # The web app's client-modules roster only scans Loader rows whose name is
+    # an exact package name, and this package's service rows are all subpath
+    # mounts — so without this row the browser half declared under `dsh.client`
+    # (the doctor composer button) would never load. `.` is the no-op client
+    # host half (lib/client-host.js), safe at the composition root; the shell
+    # executor that used to own `.` lives at `dsh-plugin-wsl-env/shell` since
+    # 0.20.0 and is mounted inside the preset below. The bare specifier is
+    # load-bearing: do not "simplify" it to a subpath.
+    # ═════════════════════════════════════════════════════════════════════════════
+    - id: wsl-env-client-host
+      name: 'dsh-plugin-wsl-env'
+
+    # Status route for the sidebar panel: `GET /api/wsl-env/status` lists the
+    # installed distros and, for one named distro, runs the quick doctor CLI
+    # and returns its digested verdict; `POST` on the same route runs the full
+    # doctor with `--fix-owned` (stale scopes and a broken agent cache only,
+    # both re-verified) and answers with the fix rows. `DELETE` clears one
+    # named distro's stored verdict, or every stored verdict when no distro is
+    # named; clearing is local and never lists or probes distros. The route
+    # rides the authenticated /api channel (`ctx.connection.fetch`), so only
+    # the owner browser reads it; a composition without the Web connection
+    # leaves this row inert. Probing a stopped distro boots it, so a check or
+    # repair only ever starts from an explicit click — never from listing.
+    - id: wsl-status
+      name: 'dsh-plugin-wsl-env/status'
+      config:
+        cacheMs: 15000
+        timeoutMs: 90000
+        wslPath: wsl.exe
+
+    # Version information and one-click upgrade for the same sidebar panel.
+    # The route answers with the installed/running plugin versions, the latest
+    # stable release that can replace them, and the last check's outcome; the
+    # host's plugin-manager owns the registry lookup (`listVersions`) and the
+    # install (`updateBundle`). A click in the panel is the only thing that
+    # starts an update — the row never upgrades on its own. The update installs
+    # the new package and lets the host's HMR/restart policy decide when it
+    # takes effect; the panel reports restart-required and rollback outcomes.
+    - id: wsl-plugin-update
+      name: 'dsh-plugin-wsl-env/plugin-update'
+      config:
+        cacheMs: 600000
+
+    # The human-facing `/wsl-doctor` command (the composer button's target):
+    # registered globally so any session can run the diagnosis, not only WSL
+    # preset agents. The handler spawns the standalone doctor CLI — no model
+    # turn, no in-process collector — so the command still answers when the
+    # plugin's own runtime is the thing being diagnosed. Deployments without a
+    # command adapter leave this row a no-op.
+    - id: wsl-doctor-command
+      name: 'dsh-plugin-wsl-env/wsl-doctor-command'
+
+    # Durable replacement for the local app.asar open-in-app patch. The row
+    # registers an authenticated route that scrubs ELECTRON_RUN_AS_NODE from
+    # the editor child's environment (never the Host's: a Host-wide deletion
+    # breaks Node-mode helpers such as the Windows Job runner) and launches VS
+    # Code with the WSL workspace's `vscode-remote` URI, so it lands in
+    # Remote-WSL instead of a 9p folder. The shipped "Open in app" item still
+    # inherits the flag and remains broken until upstream scrubs its own child.
+    - id: wsl-open-in-app
+      name: 'dsh-plugin-wsl-env/open-in-app'
+      config:
+        executable: ''
+        watchMs: 1500
+
+    - id: fs-routing
+      name: 'dsh-plugin-wsl-env/fs-routing'
+      config:
+        # auto: route each UNC target to its own distro; "default" forces WSL's
+        # default, and a name pins. Empty is auto.
+        distro: ''
+        wslPath: wsl.exe
+        sandbox: true
+        maskWindowsDrive: false
+        restrictToDistro: true
+        watchMaxDepth: 0
+    # Contributes the WSL environment's facts (distro / real shell / home) to the
+    # managed DSH_* namespace that dsh-shell-env injects into every model shell
+    # call. That is DSH's sanctioned channel for shell-environment facts.
+    - id: wsl-shell-env
+      name: 'dsh-plugin-wsl-env/shell-env'
+
+    # Per-session environment selection from the workspace directory. It only
+    # rewrites a preset that still equals the registry default, so an operator's
+    # explicit choice is never overridden.
+    - id: auto-preset
+      name: 'dsh-plugin-wsl-env/auto-preset'
+
+    # Session-start sandbox preflight: when a distro session opens, run the
+    # providers' own bwrap usability probe (shared cache, so the first confined
+    # command pays nothing) and surface a missing or broken bubblewrap as a
+    # warning with the full remedy — instead of the first command's fail-closed
+    # error being the discovery moment. Advisory only: it never installs and
+    # never changes the providers' fail-closed semantics.
+    - id: wsl-preflight
+      name: 'dsh-plugin-wsl-env/preflight'
+
+    # Distro-native working directory in the runtime context: rewrite the
+    # `working-directory:current` entry so a distro session reads its cwd as
+    # the POSIX path its own commands use (`/home/...`) instead of the host
+    # UNC spelling (`\\wsl.localhost\<distro>\...`). Display only: it touches
+    # one prompt entry, leaves drive paths and every other context alone, and
+    # degrades to a no-op on a harness without the assemble waterfall.
+    - id: wsl-cwd-prompt
+      name: 'dsh-plugin-wsl-env/cwd-prompt'
+      config:
+        enabled: true
+
+    # Distro-native `working_directory` tool: the third surface the cwd reaches
+    # the model through. Same tool name, parameters, and `cd` semantics (the
+    # harness's `workingDirectory` service still owns all directory state);
+    # the returned path is rewritten to the distro's POSIX form. Non-WSL paths
+    # pass through byte for byte. Pairs with the top-level disable of
+    # `tool-working-directory` above.
+    - id: wsl-cwd-prompt-tool
+      name: 'dsh-plugin-wsl-env/cwd-prompt-tool'
+
+    # Update check: on a slow timer (first check 2-10 minutes after boot, then
+    # once a day) ask the host's plugin-manager whether a newer stable release
+    # of this package exists, and publish one fact the shell-env row serves as
+    # DSH_WSL_PLUGIN_UPDATE. Delegated only: it never fetches the registry on
+    # its own (the host's plugin-manager does the registry work) and never
+    # installs; the one-click upgrade is the separate wsl-plugin-update row's
+    # explicit POST. A host without the service — or a bundle loaded from a
+    # linked checkout — skips the check quietly. A fresh version takes effect
+    # after HMR or the next DSH restart, as the host reports.
+    - id: wsl-update-check
+      name: 'dsh-plugin-wsl-env/update-check'
+      config:
+        enabled: true
+        intervalMs: 86400000
+
+- insert:
+    # ═════════════════════════════════════════════════════════════════════════════
+    # preset-wsl — the WSL environment, scoped to agents that select this preset.
+    #
+    # This is what makes environments per-session instead of per-process: the shell
+    # and fs services are isolated to this preset's realm, so an agent on the host
+    # preset keeps the profile's global sandboxed PowerShell executor and ACL-confined
+    # filesystem while an agent on this preset gets the distro's login shell and its
+    # UNC-backed filesystem — concurrently, in one process.
+    #
+    # The wrapping group is required by dsh-agent-preset-registry, which audits every
+    # preset mount and rejects a provider that is not behind an isolate realm:
+    #     "Preset services require isolate realms: shell, fs"
+    # Because a preset's plugins mount under a REGISTRY-owned scope (not this row's
+    # ctx), the realm has to be declared here, inside config.plugins.
+    #
+    # Generated from the shipped standard preset so the embedded plan-mode
+    # section and every nested group survive byte-for-byte: this copy is
+    # `packages/bundle/web-app/presets/standard.patch.yml` of the
+    # `dsh-v0.2.2-rc.1` source tree, changed
+    # in exactly three ways —
+    #   1. every shipped row mounts inside `wsl-env`, so the preset's tools see
+    #      the distro's shell and fs (the realm is declared on the group);
+    #   2. `tool-bash` is enabled and `tool-pwsh` disabled outright, where the
+    #      shipped copy derives the choice from `process.platform`;
+    #   3. the identity and display metadata: row `preset-wsl`, preset `wsl`,
+    #      `name`/`description` for the mode selector, `order: 1`.
+    # Regenerate it when an app update changes the preset: take
+    # `packages/bundle/web-app/presets/standard.patch.yml` from the harness tree
+    # the peer pins track, replace this row to the end of the file with its
+    # content, then re-apply changes 1–3 by hand.
+    # ═════════════════════════════════════════════════════════════════════════════
+    - id: preset-wsl
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: wsl
+        # Display metadata: `wsl` is not a registry built-in id, so the mode
+        # selector falls back to the raw id and "no description" unless the
+        # declaration carries its own copy (registry policy: user-authored
+        # metadata is never localized — write it in the deployment language).
+        #
+        # The name says what it is: 标准模式's capabilities in the distro's
+        # world, not a fifth task mode. The order ties with 标准模式 (order 1);
+        # the registry sorts equal orders by id, and "standard" sorts before
+        # "wsl", so the variant sits directly under the mode it extends.
+        name: 标准模式（WSL）
+        description: 在 WSL 的 Linux 实例中打开项目工作区：命令执行、shell 脚本和文件访问均在 Linux 空间内完成，以获得全套 Linux shell 工具链，受限命令经 bubblewrap 沙箱隔离。
+        order: 1
+        plugins:
+          - id: wsl-env
+            name: cordis:group
+            group: true
+            isolate:
+              shell: true
+              fs: true
+            config:
+              # ── the WSL environment for this preset only ────────────────────
+              # No `cwd`: an empty default workdir means the distro user's home,
+              # asked of the distro itself. Pin a directory here to override it —
+              # a value that is right on one machine is wrong on every other.
+              #
+              # Commands run in one persistent systemd user scope per session
+              # (ADR 0001): a background dev server survives the command that
+              # started it, `/tmp` is the distro's real `/tmp`, and `ps` sees the
+              # session. This needs systemd as PID 1 (`[boot] systemd=true` in
+              # /etc/wsl.conf) and a lingering user manager (`loginctl
+              # enable-linger <user>`); the preflight refuses with those remedies
+              # when one is missing. Set `sessionSandbox` to `auto` (falls back
+              # to the per-command shape without systemd) or `false` for the old
+              # per-command shape. Bubblewrap is still required for the mount
+              # profile; without it the providers fail closed.
+              - id: wsl-shell
+                name: 'dsh-plugin-wsl-env/shell'
+                config:
+                  # auto: follow the request workdir's UNC distro; "default"
+                  # forces WSL's default, and a name pins. Empty is auto.
+                  distro: ''
+                  loginShell: true
+                  timeoutMs: 120000
+                  maxTimeoutMs: 600000
+                  sessionSandbox: true
+                  # auto: the native session-runtime agent when a verified
+                  # source is available (packaged binary, or the
+                  # DSH_WSL_AGENT_NATIVE development override); otherwise the
+                  # shipped shell agent. native fails the first command instead
+                  # of falling back; shell forces the shell agent.
+                  agentBackend: auto
+                  # 工具链缓存等额外可写目录；默认空。示例（与 wsl-fs 配同一列表）：
+                  # writableRoots: ['~/.npm', '~/.cache', '~/.local/share/pnpm']
+              - id: wsl-fs
+                name: 'dsh-plugin-wsl-env/fs'
+                config:
+                  # auto: follow each target path's UNC distro; "default"
+                  # forces WSL's default, and a name pins. Empty is auto.
+                  distro: ''
+                  restrictToDistro: true
+                  # agent (the default): reads/writes/identities run inside the
+                  # distro over the resident agent (lib/fs-substrate.js) —
+                  # native symlinks and mode bits, the write guard survives to
+                  # publication, and confined mutations are kernel-enforced.
+                  # "share" is retired; a profile carrying it is refused at boot.
+                  substrate: agent
+                  # Confined writes ride the session runtime (ADR 0001), so they
+                  # share the command's real /tmp and workspace mounts.
+                  sessionSandbox: true
+                  # 与 wsl-shell 的 writableRoots 保持同一列表；见 CONFIGURATION。
+                  # writableRoots: ['~/.npm', '~/.cache', '~/.local/share/pnpm']
+              - id: persona
+                name: '@deepseek-ai/dsh-persona'
+                config:
+                  prefix: You are a coding agent powered by the {{model}} model.
+              - id: agent-instructions
+                name: '@deepseek-ai/dsh-agent-instructions'
+                config:
+                  maxBytes: 65536
+              - id: time-context
+                name: '@deepseek-ai/dsh-time-context'
+              - id: tool-bash
+                name: '@deepseek-ai/dsh-tool-bash'
+                disabled: false
+              - id: tool-pwsh
+                name: '@deepseek-ai/dsh-tool-pwsh'
+                disabled: true
+              - id: tool-fs
+                name: '@deepseek-ai/dsh-tool-fs'
+                config:
+                  # Set false to drop the apply_patch tool beside edit. The
+                  # base patchText is the host-side implementation; the distro
+                  # substrate serves read/write/edit itself and must not have
+                  # a patch path that quietly crosses the 9p share instead.
+                  applyPatch: false
+              - id: tool-fs-search
+                name: '@deepseek-ai/dsh-tool-fs-search'
+                config:
+                  sampleOverCapGlobResults: false
+              - id: tool-jobs
+                name: '@deepseek-ai/dsh-tool-jobs'
+
+              # The model runs the environment doctor itself: the verdict
+              # lands in the transcript (ready, or blocked with per-failure
+              # copy-paste remedies). In-process via doctorReport(), so the
+              # live resident's state merges in; mounts inside this preset
+              # because a host-preset agent has no distro to examine.
+              - id: wsl-doctor-tool
+                name: 'dsh-plugin-wsl-env/wsl-doctor-tool'
+              - id: tool-schedule
+                name: '@deepseek-ai/dsh-tool-schedule'
+              - id: skill-filesystem
+                name: '@deepseek-ai/dsh-skill-filesystem'
+              - id: tool-skill
+                name: '@deepseek-ai/dsh-tool-skill'
+              - id: command-goal
+                name: '@deepseek-ai/dsh-command-goal'
+              - id: tool-goal
+                name: '@deepseek-ai/dsh-tool-goal'
+              - id: planning
+                name: cordis:group
+                group: true
+                isolate:
+                  planMode: true
+                config:
+                  - id: plan-mode
+                    name: '@deepseek-ai/dsh-plan-mode'
+                    config:
+                      section: |
+                        You are in plan mode. Stay in plan mode until the user approves your plan through exit_plan_mode or switches the session mode. Imperative language to implement changes means plan the implementation, not execute it. A user's conversational agreement — including an answer confirming something you asked — approves nothing and does not end plan mode; fold the confirmed decision into the plan and submit it through exit_plan_mode.
+
+                        Explore first. Use non-mutating reads, searches, static analysis, and checks to ground the plan in the actual repository. Do not edit or write files, change configuration, run formatters or code generation that rewrites tracked files, commit, or otherwise carry out the plan. Prefer existing functions and patterns over new machinery.
+
+                        The tool catalog stays the same across modes for request-cache stability. These plan-mode rules override any later tool description or guidance that suggests using mutation tools; those tools remain listed to keep the tool catalog unchanged. Do not use todo_write to track this planning phase: it tracks implementation after an approved plan, while the plan itself belongs in exit_plan_mode.
+
+                        Resolve discoverable facts by inspection. Use ask_user_question only for user-owned choices or material ambiguity that inspection cannot answer. Do not ask the user where code lives or how current behavior works when you can find out.
+
+                        Make the plan decision-complete: state the goal and success criteria; group implementation changes by subsystem; identify public API, schema, and data-flow changes; cover edge cases, failure modes, tests, acceptance criteria, and explicit assumptions. Keep it concise enough to review but detailed enough that another engineer can implement it without making design decisions.
+
+                        When ready, call exit_plan_mode with the complete plan markdown, starting with a # title. Make exit_plan_mode the only and final tool call in that assistant response: it presents the plan for approval, and implementation begins only in a later step after approval. Do not paste the final plan as a plain reply or ask "should I proceed?" through prose or ask_user_question. If review rejects it, incorporate the feedback and present again. If the review channel is unavailable or aborted, stay in plan mode and ask the user to switch modes manually; do not proceed with implementation.
+              - id: compaction
+                name: cordis:group
+                group: true
+                isolate:
+                  compaction: true
+                  toolResultPruner: true
+                config:
+                  - id: compaction-basic
+                    name: '@deepseek-ai/dsh-compaction-basic'
+                  - id: command-compact
+                    name: '@deepseek-ai/dsh-command-compact'
+                  - id: tool-result-pruner
+                    name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                    config:
+                      thresholdChars: 8192
+                      headChars: 4096
+                      tailChars: 1024
+              - id: delegation
+                name: cordis:group
+                group: true
+                isolate:
+                  workflowEngine: true
+                config:
+                  - id: tool-subagent-control
+                    name: '@deepseek-ai/dsh-tool-subagent-control'
+                  - id: tool-subagent
+                    name: '@deepseek-ai/dsh-tool-subagent'
+                    config:
+                      provider: spawn
+                      toolName: subagent
+                      modelSelection: true
+                      modelDiscovery: true
+                  - id: tool-subagent-fork
+                    name: '@deepseek-ai/dsh-tool-subagent'
+                    config:
+                      provider: fork
+                      toolName: subagent_fork
+                  - id: workflow-ptc
+                    name: '@deepseek-ai/dsh-workflow-ptc'
+                    config:
+                      provider: spawn
+                  - id: tool-workflow
+                    name: '@deepseek-ai/dsh-tool-workflow'
+              - id: tool-ask-user
+                name: '@deepseek-ai/dsh-tool-ask-user'
+              - id: tool-todo
+                name: '@deepseek-ai/dsh-tool-todo'
+                config:
+                  allowParallelInProgress: true
+              - id: tool-web
+                name: '@deepseek-ai/dsh-tool-web'
+                config:
+                  fetch: true
+                  searchTimeoutMs: 60000
+              - id: present
+                name: '@deepseek-ai/dsh-tool-present'
+              - id: tool-plugin-manager
+                name: '@deepseek-ai/dsh-plugin-manager/tools'
+                disabled: !!js "!ctx.get('profileContext')"
+              - id: tool-plugin-market
+                name: '@deepseek-ai/dsh-plugin-market/tools'
+                disabled: true

@@ -50,16 +50,17 @@ test('no newer source version is independent of dependency and mirror eligibilit
     assert.equal(row.latestVersion,null); assert(row.reasons.includes('dependency-graph-update-requires-separate-review'));
 });
 
-test('WSL discovery exposes future candidate but fixed archive admission stays blocked', async () => {
- const row={...summary,name:'dsh-plugin-wsl-env',version:'0.26.2'};
- const manager={listVersions:async()=>({status:'listed',registry:PUBLIC,versions:[{version:'0.29.0',bundle:true}]})};
- const [answer]=await scanUpdates(manager,[row]);
- assert.equal(answer.latestVersion,'0.29.0');assert.equal(answer.versionStatus,'available');
- assert.equal(answer.updateStatus,'blocked');assert.equal(answer.canUpdate,false);
- assert(answer.reasons.includes('wsl-version-not-yet-verified'));
- const targetMetadata={name:row.name,version:'0.29.0'};
- assert.equal(onlineSafety({...row,update:'registry',removable:true,availability:'profile'},targetMetadata).permitted,false);
- assert.equal(onlineSafety({...row,version:'0.29.0',update:'registry',removable:true,availability:'profile'},targetMetadata).permitted,false);
+test('WSL discovery alone cannot replace mandatory archive structural inspection', async () => {
+    const row={...summary,name:'dsh-plugin-wsl-env',version:'0.26.2'};
+    const manager={listVersions:async()=>({status:'listed',registry:PUBLIC,versions:[{version:'0.29.0',bundle:true}]})};
+    const [answer]=await scanUpdates(manager,[row]);
+    assert.equal(answer.latestVersion,'0.29.0'); assert.equal(answer.versionStatus,'available');
+    assert.equal(answer.updateStatus,'blocked'); assert.equal(answer.canUpdate,false);
+    assert(answer.reasons.includes('wsl-archive-preflight-unavailable'));
+    // Metadata recognizes the route; source/structure permission comes only from archive inspection.
+    const targetMetadata={name:row.name,version:'0.29.0'};
+    assert.equal(onlineSafety({...row,update:'registry',removable:true,availability:'profile'},targetMetadata).permitted,false,'A target manifest cannot validate the currently installed version');
+    assert.equal(onlineSafety({...row,version:'0.29.0',update:'registry',removable:true,availability:'profile'},targetMetadata).permitted,true);
 });
 
 test('missing custom metadata, truncated window and malformed responses never imply latest', () => {

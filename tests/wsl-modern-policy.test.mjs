@@ -18,9 +18,9 @@ const manifest={name:'dsh-plugin-wsl-env',version:'0.28.0'};
 const patch=(selected=rows)=>'- id: subprocess\n  disabled: true\n- id: fs-sandbox\n  disabled: true\n- id: directory-picker\n  disabled: true\n- id: tool-working-directory\n  disabled: true\n- id: terminal-controller\n  name: "@deepseek-ai/dsh-api-terminal-controller"\n  config:\n    shell:\n      path: wsl.exe\n- insert:\n'+selected.map(([id,name])=>`    - id: ${id}\n      name: '${name}'\n`).join('');
 function tar(files){const output=[];for(const [name,body]of files){const bytes=Buffer.from(body),header=Buffer.alloc(512);header.write(name,0,100);header.write('0000644\0',100);header.write(bytes.length.toString(8).padStart(11,'0')+'\0',124);header.fill(32,148,156);header[156]=48;header.write('ustar\0',257);header.write([...header].reduce((a,b)=>a+b,0).toString(8).padStart(6,'0')+'\0 ',148);output.push(header,bytes,Buffer.alloc((512-bytes.length%512)%512));}return gzipSync(Buffer.concat([...output,Buffer.alloc(1024)]));}
 
-test('WSL fixed archive policy admits only reviewed stable originals',()=>{
- for(const version of ['0.24.0','0.26.2','0.28.0'])assert.equal(isGenerationSupported({...manifest,version}),true);
- for(const version of ['0.27.0','0.28.1','0.29.0','0.30.0','0.28.0-beta.1','invalid'])assert.equal(isGenerationSupported({...manifest,version}),false);
+test('WSL route recognizes stable candidates while full archive preflight remains mandatory',()=>{
+ for(const version of ['0.24.0','0.26.2','0.28.0','0.27.0','0.28.1','0.29.0','0.30.0'])assert.equal(isGenerationSupported({...manifest,version}),true);
+ for(const version of ['0.28.0-beta.1','invalid'])assert.equal(isGenerationSupported({...manifest,version}),false);
  assert.equal(isGenerationSupported({name:'other',version:'0.28.0'}),false);
 });
 

@@ -276,6 +276,64 @@ window.__ModuleLoader__.load({
       'reason.self-github-object-mismatch': '无法核验 GitHub 对象摘要，禁止更新。',
       'reason.self-installed-original-unverified': '已安装文件与原包或固定 GitHub 提交不一致，已阻止自身升级。'
     });
+    Object.assign(EN, {
+      latestVersion: 'Checked version', taskPolicy: 'Tasks before updating', reasonTitle: 'Online update conditions',
+      versionCheck: 'Version check', onlineUpdate: 'Online update', querySource: 'Version query source',
+      querySourceUnknown: 'Source not verified', querySourceScope: 'This version result applies only to this query source, not every source.',
+      queryGithubSource: 'This updater’s fixed GitHub repository · main HEAD, not a release',
+      'version.available': 'Newer compatible stable version found', 'version.up-to-date': 'No newer stable version found on the current query source',
+      'version.no-compatible-version': 'Newer published version found, but no eligible stable update candidate', 'version.unknown': 'Could not determine whether a compatible newer version exists',
+      'version.error': 'Version check failed', 'version.not-checked': 'Not checked',
+      'update.available': 'Available after confirmation', 'update.blocked': 'Conditions not met', 'update.no-update': 'No selectable newer version', 'update.not-checked': 'Not checked',
+      installedVersionShown: 'Installed version', compatibleVersionShown: 'Compatible update candidate', publishedVersionShown: 'Newer published version',
+      notCompatibleCandidate: 'No eligible stable candidate: it may be incompatible, deprecated or not a plugin bundle', candidateUnconfirmed: 'Published version found; the update candidate remains unconfirmed',
+      selfCheckHelp: 'The updater has a separate update path. Click Check all updates to review its version and source; never mix it into a normal batch.',
+      'reason.self-update-blocked': 'The updater is excluded from ordinary batches; review its independent self-update path.',
+      'reason.host-runtime-dependencies': 'Declares @deepseek-ai runtime dependencies; this path is not yet verified. This is not proof that it replaces the Host.',
+      'reason.registry-origin-unsupported': 'This query source is not admitted for online replacement; no source is silently migrated.',
+      'reason.registry-origin-unverified': 'The actual query source could not be verified; online replacement remains blocked.',
+      'reason.self-update-public-origin-required': 'Self-update requires a verified public npm query source; a mirror or other source is not silently migrated.',
+      'reason.self-query-origin-unverified': 'The actual public npm query source could not be verified; self-update remains blocked.',
+      'reason.registry-origin-changed': 'The effective query source changed during the check. Recheck before preparing any update.',
+      'reason.version-metadata-incomplete': 'Version metadata is incomplete or the lookup window omits candidates. No latest-version or safe-update conclusion is inferred.',
+      registrySourceVerification:'npm source and official update eligibility',
+      'registryCheck.verified':'Registry installation preserved', 'registryCheck.failed':'Registry installation not verified', 'registryCheck.unknown':'Registry source unknown',
+      'reason.legacy-archive-source-requires-migration':'An older Doctor update installed this plugin from a local archive. Automatic source migration is refused; review migration with the official manager.',
+      'reason.registry-update-outcome-unknown':'A registry update or recovery has no verified final result. Check the official manager; do not resend it automatically.',
+      'reason.registry-handoff-unavailable':'The public Host exact-version registry update path is unavailable.',
+      'reason.dependency-runtime-reload-unverified':'Safe no-restart updating is not supported on this stock Host path. This updater blocks the risk; it does not fix Host reload or automatically restart DSH.',
+      'reason.identity-store-unverified':'Installation/recovery records cannot be verified. Stop management attempts and inspect the official manager; do not overwrite the records.',
+      registryHandoffSafety:'Normal npm updates preserve registry installation through the official Host updater. Prepared archives are preflight evidence: the Host downloads again using its existing fallback settings, and installation/rollback may fail. WSL generation packages remain local archives.'
+    });
+    Object.assign(ZH, {
+      latestVersion: '版本检查结果', taskPolicy: '更新前任务处理', reasonTitle: '在线更新条件',
+      versionCheck: '版本检查', onlineUpdate: '在线更新', querySource: '版本查询源',
+      querySourceUnknown: '来源未确认', querySourceScope: '版本检查结果仅针对该查询源，不代表所有来源。',
+      queryGithubSource: '更新器固定 GitHub 仓库 · 主分支 HEAD，非 Release',
+      'version.available': '发现较新的兼容正式版', 'version.up-to-date': '当前查询源未发现较新的正式版本',
+      'version.no-compatible-version': '已发现新版，但没有可选的正式版更新候选', 'version.unknown': '未能确定是否存在兼容新版',
+      'version.error': '版本检查失败', 'version.not-checked': '尚未检查',
+      'update.available': '可在确认后更新', 'update.blocked': '条件不满足', 'update.no-update': '无可选新版', 'update.not-checked': '尚未检查',
+      installedVersionShown: '当前已装版本', compatibleVersionShown: '兼容更新候选', publishedVersionShown: '较新发布版本',
+      notCompatibleCandidate: '没有可选正式版候选：可能不兼容、已弃用或未声明插件包', candidateUnconfirmed: '已发现发布版本，更新候选仍未确定',
+      selfCheckHelp: '更新器支持独立检查；点击“检查全部更新”后核对版本及来源，不与普通批次混合。',
+      'reason.self-update-blocked': '更新器不参与普通批次，请核对独立的自身升级路径。',
+      'reason.host-runtime-dependencies': '声明了 @deepseek-ai 范围的运行依赖，当前路径尚未验证；这不是已确认会替换宿主。',
+      'reason.registry-origin-unsupported': '当前查询源未获准用于在线替换，不会静默迁移来源。',
+      'reason.registry-origin-unverified': '无法核验实际版本查询源，在线替换仍被阻止。',
+      'reason.self-update-public-origin-required': '自身升级要求已核验的公共 npm 查询源，不会静默迁移镜像或其它来源。',
+      'reason.self-query-origin-unverified': '无法核验实际公共 npm 查询源，自身升级仍被阻止。',
+      'reason.registry-origin-changed': '检查期间实际查询源发生变化，请重新检查后再准备更新。',
+      'reason.version-metadata-incomplete': '版本元数据不完整或查询窗口遗漏候选，不能据此认定已是最新或可安全更新。',
+      registrySourceVerification:'npm 来源与官方更新资格',
+      'registryCheck.verified':'保留 npm 安装来源', 'registryCheck.failed':'npm 来源未通过核验', 'registryCheck.unknown':'npm 来源未知',
+      'reason.legacy-archive-source-requires-migration':'此前的更新器将此插件安装为本地归档；不会自动迁移来源，请通过官方管理器核对迁移方式。',
+      'reason.registry-update-outcome-unknown':'npm 更新或恢复没有已核验的最终结果，请核对官方管理器，不要自动重发。',
+      'reason.registry-handoff-unavailable':'宿主公开的按精确版本 npm 更新路径不可用。',
+      'reason.dependency-runtime-reload-unverified':'当前原版宿主的这条路径不支持安全无重启更新。本更新器只拦截风险，不修复宿主热加载，也不会自动重启 DSH。',
+      'reason.identity-store-unverified':'安装／恢复记录无法核验，已停止管理操作；请核对官方管理器，不要覆盖未知记录。',
+      registryHandoffSafety:'普通 npm 更新通过官方管理器保留 npm 安装来源。准备的归档仅作预检证据，宿主会沿用现有 fallback 重新下载；安装和恢复均可能失败。WSL 代际包装仍使用本地归档。'
+    });
     const githubReasonAliases = {
       'self-github-tree-mode-unsupported': 'self-github-tree-unsupported', 'self-github-tree-path-unsupported': 'self-github-tree-unsupported',
       'self-github-tree-size-unsupported': 'self-github-tree-unsupported', 'self-github-tree-invalid': 'self-github-tree-unsupported',
@@ -306,10 +364,41 @@ window.__ModuleLoader__.load({
       const raw = string(step?.step); const prefix = ['preparing', 'updating', 'installing', 'restoring', 'verifying'].find(name => raw.startsWith(name + '-'));
       return prefix ? localText(t, 'step.' + prefix, prefix) + ' · ' + raw.slice(prefix.length + 1) : localText(t, 'step.' + raw, raw || t('unknown'));
     };
-    const eligible = item => item?.canUpdate === true && item.status === 'available' && !!string(item.latestVersion);
+    const hasVersionStates = item => !!item && (Object.hasOwn(item, 'versionStatus') || Object.hasOwn(item, 'updateStatus'));
+    const versionStates = item => {
+      if (hasVersionStates(item)) return {
+        version: ['available', 'up-to-date', 'no-compatible-version', 'unknown', 'error', 'not-checked'].includes(item.versionStatus) ? item.versionStatus : 'unknown',
+        update: ['available', 'blocked', 'no-update', 'not-checked'].includes(item.updateStatus) ? item.updateStatus : 'blocked',
+      };
+      const version = item?.status === 'not-checked' ? 'not-checked' : item?.status === 'error' ? 'error'
+        : string(item?.latestVersion) ? 'available' : item?.status === 'up-to-date' ? 'up-to-date' : 'unknown';
+      return { version, update: item?.status === 'not-checked' ? 'not-checked' : item?.status === 'available' && item?.canUpdate === true ? 'available'
+        : item?.status === 'blocked' || array(item?.reasons).length ? 'blocked' : 'no-update' };
+    };
+    const eligible = item => item?.canUpdate === true && !!string(item.latestVersion) && (hasVersionStates(item)
+      ? item.versionStatus === 'available' && item.updateStatus === 'available' : item.status === 'available');
+    const initialVersionItem = item => ({ ...item, canUpdate: false, latestVersion: null, latestPublishedVersion: null,
+      versionStatus: 'not-checked', updateStatus: 'not-checked', status: 'not-checked',
+      ...(item?.name === 'dsh-plugin-update-doctor' ? { mode: 'host-self-update', reasons: array(item.reasons).filter(reason => reason !== 'self-update-blocked') } : {}) });
+    const safeQueryOrigin = value => {
+      if (!string(value) || value.length > 512) return '';
+      try {
+        const url = new URL(value);
+        return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password && !url.search && !url.hash && url.pathname === '/' ? url.origin : '';
+      } catch { return ''; }
+    };
+    const versionDisplay = item => {
+      const { version } = versionStates(item);
+      if (version === 'not-checked') return { value: '', label: 'notChecked' };
+      if (version === 'up-to-date') return { value: string(item?.version), label: 'installedVersionShown' };
+      if (string(item?.latestVersion) && version === 'available') return { value: item.latestVersion, label: 'compatibleVersionShown' };
+      if (string(item?.latestPublishedVersion)) return { value: item.latestPublishedVersion, label: 'publishedVersionShown', note: version === 'no-compatible-version' ? 'notCompatibleCandidate' : 'candidateUnconfirmed' };
+      return { value: '', label: version === 'error' ? 'version.error' : 'unknown' };
+    };
     const recoveryEligible = item => item?.canRestore === true && !!string(item.restoreVersion) && !!string(item.recoveryId);
     const isSelf = operation => operation === 'host-self-update';
     const isRestore = operation => operation === 'batch-restore';
+    const informationWarnings = item => array(item?.infoWarnings).filter(value => typeof value === 'string').slice(0, 12);
     const boundedText = (value, limit = 12000) => string(value).slice(-limit);
     const boundedLogs = value => array(value).slice(-60).map(chunk => ({ name: boundedText(chunk?.name, 200), stream: boundedText(chunk?.stream, 16), text: boundedText(chunk?.text, 1000) }));
     const request = async (action, params = {}, method = 'GET', signal, timeoutMs = 45000) => {
@@ -339,6 +428,30 @@ window.__ModuleLoader__.load({
     function Badge({ value, prefix = 'status', t }) {
       const text = localText(t, prefix + '.' + (string(value) || 'unknown'), t('unknown'));
       return h('span', { className: 'pud-status', 'data-state': value }, text);
+    }
+    function VersionState({ item, t }) {
+      const states = versionStates(item), origin = safeQueryOrigin(item?.registry);
+      const github = item?.sourceKind === 'git' && item?.mode === 'host-self-update';
+      return h('div', { className: 'pud-small pud-break', 'data-testid': 'pud-version-state' },
+        h('p', { style: { margin: '0 0 5px' }, 'data-version-status': states.version },
+          h('strong', null, t('versionCheck') + ': '), h('span', { className: states.version === 'error' ? 'pud-error' : states.version === 'unknown' ? 'pud-muted' : '' }, localText(t, 'version.' + states.version, t('unknown')))),
+        h('p', { style: { margin: 0 }, 'data-update-status': states.update },
+          h('strong', null, t('onlineUpdate') + ': '), h('span', { className: states.update === 'blocked' ? 'pud-impact' : '' }, localText(t, 'update.' + states.update, t('unknown')))),
+        states.version !== 'not-checked' ? h('p', { className: 'pud-muted pud-small pud-break', style: { margin: '5px 0 0' }, 'data-testid': 'pud-query-source' },
+          t('querySource') + ': ', github ? t('queryGithubSource') : origin || t('querySourceUnknown'), ' · ', t('querySourceScope')) : null,
+        item?.status === 'recovery-required' ? h(Badge, { value: 'recovery-required', t }) : null);
+    }
+    function InformationWarnings({ item, t }) {
+      const warnings = informationWarnings(item);
+      return warnings.length ? h('ul', { className: 'pud-list pud-muted pud-small', 'data-testid': 'pud-information-warnings' },
+        ...warnings.map((warning, i) => h('li', { key: i }, localText(t, 'info.' + warning, warning)))) : null;
+    }
+    function VersionValue({ item, t }) {
+      const shown = versionDisplay(item);
+      return h('div', { className: 'pud-break', 'data-testid': 'pud-version-value' },
+        shown.value ? h('span', null, shown.value) : t(shown.label),
+        shown.value ? h('p', { className: 'pud-muted pud-small', style: { margin: '4px 0 0' } }, t(shown.label)) : null,
+        shown.note ? h('p', { className: 'pud-muted pud-small', style: { margin: '4px 0 0' } }, t(shown.note)) : null);
     }
     function SourceDetails({ value, t }) {
       const raw = jsonOf(value), preview = raw.length > 24000 ? raw.slice(0, 24000) : raw;
@@ -378,7 +491,7 @@ window.__ModuleLoader__.load({
         h('dt', null, t('packageVerification')), h('dd', null, h(Badge, { value: string(pack?.status) || 'unknown', prefix: 'package', t }), pack?.version ? h('span', null, ' · ', pack.version) : null),
         h('dt', null, t('hostVerification')), h('dd', null, h(Badge, { value: string(host?.status) || 'unknown', prefix: 'host', t }),
           typeof host?.activeRows === 'number' && typeof host?.totalRows === 'number' ? h('span', null, ' · ', host.activeRows + ' / ' + host.totalRows) : null),
-        verification?.source ? h(React.Fragment, null, h('dt', null, t('sourceVerification')), h('dd', null, h(Badge, { value: string(verification.source.status) || 'unknown', prefix: 'sourceCheck', t }))) : null);
+        verification?.source ? h(React.Fragment, null, h('dt', null, t(verification.source.expectedKind === 'registry' || verification.source.kind === 'registry' ? 'registrySourceVerification' : 'sourceVerification')), h('dd', null, h(Badge, { value: string(verification.source.status) || 'unknown', prefix: verification.source.expectedKind === 'registry' || verification.source.kind === 'registry' ? 'registryCheck' : 'sourceCheck', t }))) : null);
     }
     function ClientSync({ state, retryClient, t }) {
       const failures = array(state?.failures), [retrying, setRetrying] = useState(false), [retryError, setRetryError] = useState('');
@@ -516,7 +629,7 @@ window.__ModuleLoader__.load({
         return { ...item, ...(current ? Object.fromEntries(['canRestore', 'restoreVersion', 'recoveryId'].map(key => [key, Object.hasOwn(item, key) ? item[key] : current[key]])) : {}) };
       }) : [];
       const baseItems = scanResult ? [...scannedItems, ...initialItems.filter(item => recoveryEligible(item) && !scannedItems.some(scanned => scanned.name === item.name))
-        .map(item => ({ ...item, canUpdate: false, latestVersion: null, status: 'recovery-required' }))] : initialItems.map(item => ({ ...item, canUpdate: false, latestVersion: null, status: 'not-checked' }));
+        .map(item => ({ ...initialVersionItem(item), status: 'recovery-required' }))] : initialItems.map(initialVersionItem);
       const byName = new Map(baseItems.map(item => [item.name, item]));
       const selected = baseItems.filter(item => checked.has(item.name) && eligible(item));
       const available = baseItems.filter(eligible);
@@ -651,9 +764,10 @@ window.__ModuleLoader__.load({
           h('td', null, h('input', { type: 'checkbox', className: 'pud-check', checked: checked.has(item.name) && eligible(item), disabled: !eligible(item) || !!pending || busy,
             'aria-label': t('select') + ' ' + item.name, onChange: event => toggle(item, event.target.checked) })),
           h('td', { className: 'pud-package-cell pud-break' }, h('strong', null, item.name)),
-          h('td', null, valueOf(item.version, t('noValue'))), h('td', null, valueOf(item.latestVersion, t(scanResult ? 'noValue' : 'notChecked'))),
-          h('td', null, h(Badge, { value: string(item.status) || 'not-checked', t }),
-            item.mode === 'host-self-update' ? h('p', { className: 'pud-impact pud-small' }, t('selfMode'), ' · ', t('selfHelp')) : null,
+          h('td', null, valueOf(item.version, t('noValue'))), h('td', null, h(VersionValue, { item, t })),
+          h('td', null, h(VersionState, { item, t }),
+            item.mode === 'host-self-update' ? h('p', { className: versionStates(item).version === 'not-checked' ? 'pud-muted pud-small' : 'pud-impact pud-small' },
+              versionStates(item).version === 'not-checked' ? t('selfCheckHelp') : [t('selfMode'), ' · ', t('selfHelp')]) : null,
             item.mode === 'host-self-update' && item.sourceKind === 'git' ? h('details', { className: 'pud-small' }, h('summary', null, t('githubHead')), h(CommitDetails, { value: item, t })) : null,
             item.highImpact || array(item.infoWarnings).length || array(item.reasons).includes('high-impact') ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null, reasons),
           h('td', null, h('div', { className: 'pud-inline' }, h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: !!pending,

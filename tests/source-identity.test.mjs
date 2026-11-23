@@ -5,10 +5,11 @@ import { IdentityStore } from '../lib/identity.js';
 import { scanUpdates } from '../lib/online.js';
 import { serviceFixture } from './helpers/service-fixture.mjs';
 
-test('private, mirror and missing registry origins are blocked instead of silently becoming public npm', async () => {
+test('private and missing origins remain blocked; fixed public mirror is not relabelled as official', async () => {
     for (const registry of ['https://private.example.invalid', 'https://registry.npmmirror.com', undefined]) {
         const [result] = await scanUpdates({ listVersions: async () => ({ status: 'listed', registry, versions: [{ version: '1.1.0', bundle: true }] }) }, [{ name: 'sample', canUpdate: true, sourceKind: 'registry', reasons: [] }]);
-        assert.equal(result.canUpdate, false); assert.equal(result.status, 'blocked'); assert.equal(result.registry, null);
+        assert.equal(result.canUpdate,registry==='https://registry.npmmirror.com');
+        assert.equal(result.registry, registry ?? null, 'A safe origin is displayed, never promoted to public npm');
     }
 });
 test('query-origin changes during confirmation preparation stop before plugin mutation', async t => {

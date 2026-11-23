@@ -79,7 +79,7 @@ test('GitHub self confirmation shows complete pins, sends offered commit only an
     const dialog = section('    function ConfirmDialog(', '    class PanelBoundary');
     assert(dialog.includes('h(CommitDetails, { value: item, t })'));
     assert(dialog.includes("'data-testid': 'pud-github-safety'")); assert(dialog.includes("t('githubConfirmSafety')")); assert(dialog.includes("githubUpdating ? t('acknowledgeGithubSelf')"));
-    assert(code.includes("prefix: 'sourceCheck'")); assert(code.includes('h(CommitDetails, { value: selfState.attempt, t })'));
+    assert(code.includes("verification.source.expectedKind === 'registry' || verification.source.kind === 'registry' ? 'registryCheck' : 'sourceCheck'")); assert(code.includes('h(CommitDetails, { value: selfState.attempt, t })'));
     assert(code.includes('GitHub main HEAD · not a release')); assert(code.includes('GitHub 主分支 HEAD · 非 Release'));
     assert(code.includes("useLocale(selectLocale)")); assert(code.includes("useClientSync(selectClientSync)"));
 });

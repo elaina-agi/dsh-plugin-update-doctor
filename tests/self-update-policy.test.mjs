@@ -115,13 +115,15 @@ test('runtime entry exports, wrong platform, extra Host peers and metadata are r
         const value = manifest(); change(value); assert.throws(() => inspectSelfArchive(archive(value), options));
     }
 });
-test('public query origin and an exact public-only Host registry plan are mandatory', () => {
+test('public query origins and exact known-public Host registry plans are mandatory', () => {
     verifySelfRegistryPlan(registry, 'https://registry.npmjs.org/');
     verifySelfRegistryPlan({ ...registry, registry: null }, 'https://registry.npmjs.org');
+    assert.deepEqual(verifySelfRegistryPlan({...registry,fallbackRegistries:['https://registry.npmmirror.com']},'https://registry.npmjs.org').fallbackRegistries,['https://registry.npmmirror.com']);
+    assert.equal(verifySelfRegistryPlan({...registry,resolved:'https://registry.npmmirror.com'},'https://registry.npmjs.org').resolved,'https://registry.npmmirror.com');
     for (const origin of [undefined, null, 'https://private.example.invalid', 'http://registry.npmjs.org'])
         assert.throws(() => verifySelfRegistryPlan(registry, origin), hasCode('self-query-origin-unverified'));
-    for (const plan of [{ ...registry, fallbackRegistries: ['https://registry.npmmirror.com'] }, { ...registry, registry: 'https://private.example.invalid' },
-        { ...registry, resolved: 'https://registry.npmmirror.com' }, { ...registry, registry: null, resolved: undefined }, { registry: 'https://registry.npmjs.org' }])
+    for (const plan of [{ ...registry, fallbackRegistries: ['https://private.example.invalid'] }, { ...registry, registry: 'https://private.example.invalid' },
+        { ...registry, resolved: 'https://private.example.invalid' }, { ...registry, registry: null, resolved: undefined }, { registry: 'https://registry.npmjs.org' }])
         assert.throws(() => verifySelfRegistryPlan(plan, 'https://registry.npmjs.org'), hasCode('self-host-registry-plan-unsupported'));
 });
 test('fixed public mirror uses only already-known public Host registry plans', () => {
@@ -131,7 +133,7 @@ test('fixed public mirror uses only already-known public Host registry plans', (
     for(const change of [{resolved:null},{registry:'https://private.example.invalid'},{fallbackRegistries:['https://private.example.invalid']},{resolved:'https://user:secret@registry.npmmirror.com/'}])
         assert.throws(()=>verifySelfRegistryPlan({...plan,...change},mirror),hasCode('self-host-registry-plan-unsupported'));
     assert.throws(()=>verifySelfRegistryPlan(plan,'https://arbitrary-mirror.invalid'),hasCode('self-query-origin-unverified'));
-    assert.throws(()=>verifySelfRegistryPlan({...registry,fallbackRegistries:[mirror]},registry.registry),hasCode('self-host-registry-plan-unsupported'));
+    assert.deepEqual(verifySelfRegistryPlan({...registry,fallbackRegistries:[mirror]},registry.registry).fallbackRegistries,[mirror]);
 });
 
 test('pair check matches installed original bytes and exposes only bounded metadata, not archive buffers or paths', async t => {

@@ -32,6 +32,39 @@ async function fixture(t){
  return{root,state,packages,preflight,input};
 }
 
+test('official npm query with default public mirror fallback passes without changing configuration',async t=>{
+ const f=await fixture(t);const registries={registry:null,resolved:PUBLIC,fallbackRegistries:[MIRROR]};
+ const before=structuredClone(registries);
+ const checked=await f.preflight.check({...f.input,queryRegistry:PUBLIC,registries});
+ assert.equal(checked.registry,PUBLIC);assert.equal(checked.sourceMode,'public-fallback');assert.equal(checked.publicFallback,true);
+ assert.equal(checked.publicMirror,undefined);assert.deepEqual(checked.hostRegistryPlan,{queryRegistry:PUBLIC,...registries});
+ assert.deepEqual(registries,before);assert(f.state.requests.some(url=>url.startsWith(MIRROR+'/')));
+ assert.equal(checked.next.sha256,hash(f.packages.get('0.5.1').bytes));
+});
+
+test('official query refuses differing or unavailable fallback archives rather than bypassing canonical checks',async t=>{
+ const f=await fixture(t);const input={...f.input,queryRegistry:PUBLIC,registries:{registry:null,resolved:PUBLIC,fallbackRegistries:[MIRROR]}};
+ f.state.mirrorBytes=archive(f.packages.get('0.5.0').manifest,'fallback tamper');
+ await assert.rejects(()=>f.preflight.check(input),error=>error.code==='self-public-mirror-archive-mismatch');
+ f.state.mirrorBytes=null;f.state.mirrorUnavailable=true;
+ await assert.rejects(()=>f.preflight.check(input),error=>error.code==='self-registry-metadata-unavailable');
+});
+
+test('official query rejects private unknown and credential-bearing fallback plans before download',async t=>{
+ const f=await fixture(t);
+ for(const changes of [{fallbackRegistries:['https://private.invalid']},{resolved:null},{registry:'https://user:secret@registry.npmjs.org'},{resolved:'https://private.invalid'},{fallbackRegistries:Array(9).fill(MIRROR)}]) {
+  const before=f.state.requests.length;
+  await assert.rejects(()=>f.preflight.check({...f.input,queryRegistry:PUBLIC,registries:{registry:null,resolved:PUBLIC,fallbackRegistries:[MIRROR],...changes}}),error=>error.code==='self-host-registry-plan-unsupported');
+  assert.equal(f.state.requests.length,before);
+ }
+});
+
+test('official-only duplicate public fallbacks bind consent without inventing a mirror transport',async t=>{
+ const f=await fixture(t);const checked=await f.preflight.check({...f.input,queryRegistry:PUBLIC,registries:{registry:PUBLIC,resolved:PUBLIC,fallbackRegistries:[PUBLIC]}});
+ assert.equal(checked.sourceMode,'public-fallback');assert.equal(checked.publicFallback,true);
+ assert.equal(f.state.requests.length,4);assert(f.state.requests.every(url=>url.startsWith(PUBLIC+'/')));
+});
+
 test('real mirror shape permits only one exact package-version CDN redirect with canonical comparison',async t=>{
  const f=await fixture(t),calls=[],cdn='https://cdn.npmmirror.com';
  const fetcher=async(url,options)=>{

@@ -21,7 +21,7 @@ async function fixture(t){
  const previous=manifest('0.5.0'),next=manifest('0.5.1'),packages=new Map([[previous.version,{manifest:previous,bytes:archive(previous)}],[next.version,{manifest:next,bytes:archive(next)}]]),state={requests:[],mirrorBytes:null,mirrorTarball:null,mirrorMetadata:null,mirrorUnavailable:false,redirectURL:null};
  const old=inspectSelfArchive(packages.get('0.5.0').bytes,{version:'0.5.0',role:'previous',resolvedYamlVersion:'2.9.1',helperSha256,compatibility});for(const[path,bytes]of old.files){await mkdir(dirname(join(root,path)),{recursive:true});await writeFile(join(root,path),bytes);}
  const fetcher=async(url,options)=>{
-  const parsed=new URL(url);state.requests.push(parsed.href);assert.equal(options.redirect,'error');assert.equal(options.credentials,'omit');options.signal.throwIfAborted();
+  const parsed=new URL(url);state.requests.push(parsed.href);assert.equal(options.redirect,parsed.origin===MIRROR&&parsed.pathname.endsWith('.tgz')?'manual':'error');assert.equal(options.credentials,'omit');options.signal.throwIfAborted();
   assert([PUBLIC,MIRROR].includes(parsed.origin));const version=/0\.5\.1/.test(parsed.pathname)?'0.5.1':'0.5.0',pkg=packages.get(version);
   if(parsed.origin===MIRROR&&state.mirrorUnavailable)return new Response('not synchronized',{status:404});
   const bytes=parsed.origin===MIRROR&&state.mirrorBytes?state.mirrorBytes:pkg.bytes;
@@ -31,6 +31,39 @@ async function fixture(t){
  const preflight=new SelfUpdatePreflight({fetcher,compatibility,helperSha256});const input={bundle:{name:SELF,version:'0.5.0',update:'registry',source:SELF+'@0.5.0',installed:true,enabled:true,removable:true,availability:'profile'},currentDirectory:root,targetVersion:'0.5.1',resolvedYamlVersion:'2.9.1',queryRegistry:MIRROR,registries:{registry:null,resolved:MIRROR,fallbackRegistries:[PUBLIC]}};
  return{root,state,packages,preflight,input};
 }
+
+test('real mirror shape permits only one exact package-version CDN redirect with canonical comparison',async t=>{
+ const f=await fixture(t),calls=[],cdn='https://cdn.npmmirror.com';
+ const fetcher=async(url,options)=>{
+  const parsed=new URL(url);calls.push(parsed.href);options.signal.throwIfAborted();assert.equal(options.credentials,'omit');
+  const version=parsed.pathname.includes('0.5.1')?'0.5.1':'0.5.0',pkg=f.packages.get(version);
+  if(parsed.pathname.endsWith('.tgz')) {
+   if(parsed.origin===MIRROR){assert.equal(options.redirect,'manual');return new Response('',{status:302,headers:{location:`${cdn}/packages/${SELF}/${version}/${SELF}-${version}.tgz`}});}
+   assert.equal(options.redirect,parsed.origin===cdn?'manual':'error');assert([PUBLIC,cdn].includes(parsed.origin));return new Response(pkg.bytes);
+  }
+  assert.equal(options.redirect,'error');assert([PUBLIC,MIRROR].includes(parsed.origin));
+  return Response.json({...pkg.manifest,dist:{tarball:`${parsed.origin}/${SELF}/-/${SELF}-${version}.tgz`,integrity:integrity(pkg.bytes)}});
+ };
+ const checked=await new SelfUpdatePreflight({fetcher,compatibility,helperSha256}).check(f.input);
+ assert.equal(checked.publicMirror,true);assert.equal(calls.filter(url=>url.startsWith(cdn)).length,2);
+ assert.equal(checked.next.sha256,hash(f.packages.get('0.5.1').bytes));
+});
+
+test('mirror CDN redirect rejects alternate host credentials query path encoding further hops and mismatched bytes',async t=>{
+ const f=await fixture(t),expected=`https://cdn.npmmirror.com/packages/${SELF}/0.5.0/${SELF}-0.5.0.tgz`;
+ for(const location of [expected.replace('cdn.npmmirror.com','private.invalid'),expected+'?token=x',expected+'#fragment',expected.replace('https://','http://'),expected.replace('/0.5.0/','/0.5.1/'),expected.replace('cdn.npmmirror.com','user:secret@cdn.npmmirror.com'),expected.replace('packages','%70ackages'),null]) {
+  let calls=0;const preflight=new SelfUpdatePreflight({fetcher:async()=>{calls++;return new Response('',{status:302,headers:location?{location}:{}});},compatibility,helperSha256});
+  await assert.rejects(()=>preflight.downloadArchive(new URL(`${MIRROR}/${SELF}/-/${SELF}-0.5.0.tgz`),{signal:new AbortController().signal,redirect:'error',credentials:'omit'},'0.5.0'),error=>error.code==='self-tarball-origin-unsupported');assert.equal(calls,1);
+ }
+ let calls=0;const preflight=new SelfUpdatePreflight({fetcher:async()=>{calls++;return new Response('',{status:302,headers:{location:expected}});},compatibility,helperSha256});
+ await assert.rejects(()=>preflight.downloadArchive(new URL(`${MIRROR}/${SELF}/-/${SELF}-0.5.0.tgz`),{signal:new AbortController().signal,redirect:'error',credentials:'omit'},'0.5.0'),error=>error.code==='self-tarball-origin-unsupported');assert.equal(calls,2);
+ const fetcher=async(url,options)=>{
+  const parsed=new URL(url);const version=parsed.pathname.includes('0.5.1')?'0.5.1':'0.5.0',pkg=f.packages.get(version);
+  if(parsed.pathname.endsWith('.tgz')){if(parsed.origin===MIRROR)return new Response('',{status:302,headers:{location:`https://cdn.npmmirror.com/packages/${SELF}/${version}/${SELF}-${version}.tgz`}});return new Response(parsed.origin==='https://cdn.npmmirror.com'?Buffer.from('bad CDN archive'):pkg.bytes);}
+  return Response.json({...pkg.manifest,dist:{tarball:`${parsed.origin}/${SELF}/-/${SELF}-${version}.tgz`,integrity:integrity(pkg.bytes)}});
+ };
+ await assert.rejects(()=>new SelfUpdatePreflight({fetcher,compatibility,helperSha256}).check(f.input),error=>error.code==='self-integrity-mismatch');
+});
 
 test('mirror previous and next updater archives must match canonical npm bytes and keep fixed graph',async t=>{
  const f=await fixture(t),checked=await f.preflight.check(f.input);assert.equal(checked.registry,MIRROR);assert.equal(checked.sourceMode,'public-mirror');assert.equal(checked.publicMirror,true);

@@ -358,6 +358,10 @@ window.__ModuleLoader__.load({
       migrationSafety: 'Only a verified earlier Doctor archive installation can be migrated. The version stays the same; its saved installation source becomes an npm spec so official version checks can resume. Failed installation may require restoring the old archive. Existing settings and tasks still need review.',
       acknowledgeMigration: 'I reviewed the same version, the archive-to-npm source change, and the possible temporary unload or archive recovery.',
       confirmMigrationWait: 'Confirm migration and wait for idle', confirmMigrationStop: 'Confirm task stopping and migrate', migrationHelp: 'Migration is separate from batch updates. It changes the installation source, not the version, and requires independent confirmation.',
+      publicFallbackSafety: 'Official npm is the version query source. The unchanged displayed Host plan can use public fallback registries. Potential mirror updater archives are compared with canonical npm, but the Host downloads again, so installation and recovery are not atomic byte replacements. No global registry setting is changed.',
+      acknowledgePublicFallback: 'I accept this displayed public fallback plan, mirror/refetch and recovery risks without changing my source settings.',
+      'info.public-fallback-may-use-mirror': 'The configured public fallback plan can use the fixed mirror; additional acknowledgement is required.',
+      'reason.self-host-registry-plan-unsupported': 'The Host source plan contains a private, unknown or unsupported source; only verified official npm and the fixed public mirror are admitted.',
       mirrorSafety: 'This operation uses the fixed public npm mirror. Mirror versions can lag. Review the prepared package and canonical npm comparison evidence separately: the Host refetches using its registry plan, which is shown only when provided, not an atomic byte replacement. Installation/recovery may fail. No source configuration is silently changed.',
       acknowledgeMirror: 'I explicitly accept this public-mirror source and its displayed fallback/refetch and recovery risks.',
       mirrorRegistryPlan: 'Confirmed Host registry plan', mirrorPlanPrimary: 'Configured first source', mirrorPlanResolved: 'pnpm resolved source', mirrorPlanFallback: 'Fallback source',
@@ -374,6 +378,10 @@ window.__ModuleLoader__.load({
       migrationSafety: '只迁移已核验的旧更新器归档安装。版本号不变，保存来源改为 npm 规格，以恢复官方版本检查资格。安装失败可能需要恢复旧归档；仍需核对现有配置和任务影响。',
       acknowledgeMigration: '我已核对同一版本、从归档迁回 npm 的来源变化，以及临时卸载或恢复旧归档的风险。',
       confirmMigrationWait: '确认迁移并等待空闲', confirmMigrationStop: '确认停止任务并迁移', migrationHelp: '来源迁移不与批量更新混合，只改变安装来源、不升级版本，需要单独确认。',
+      publicFallbackSafety: '版本查询来自官方 npm；下方原有宿主计划仍可能使用公共备用源。已核对可能使用的镜像更新器归档与官方 npm 一致，但宿主会重新下载，安装和恢复并非原子字节替换。不会改动你的全局源设置。',
+      acknowledgePublicFallback: '我接受下方公共备用源计划、镜像／重新下载和恢复风险，不要求更改我的源设置。',
+      'info.public-fallback-may-use-mirror': '原有公共备用源计划可能使用固定镜像，需要额外确认。',
+      'reason.self-host-registry-plan-unsupported': '宿主源计划包含私有、未知或不支持的来源；仅接纳已核验的官方 npm 和固定公共镜像。',
       mirrorSafety: '本次使用固定公共 npm 镜像，镜像版本可能延迟。请分别核对准备的包和官方 npm 对照证据；宿主按其安装源计划重新下载，提供时才展示该计划，并非原子字节替换。安装和恢复可能失败，不会偷偷修改来源配置。',
       acknowledgeMirror: '我明确接受本次公共镜像来源，以及显示的 fallback、重新下载和恢复风险。',
       mirrorRegistryPlan: '已确认宿主安装源计划', mirrorPlanPrimary: '配置的首选来源', mirrorPlanResolved: 'pnpm 实际来源', mirrorPlanFallback: '备用来源',
@@ -482,7 +490,7 @@ window.__ModuleLoader__.load({
     const isRestore = operation => operation === 'batch-restore';
     const isMigration = operation => operation === 'source-migration';
     const migrationEligible = item => item?.canMigrate === true && item.name !== 'dsh-plugin-update-doctor' && item.name !== 'dsh-plugin-wsl-env';
-    const mirrorAcknowledgementRequired = plan => plan?.mirrorRiskRequiresAcknowledgement === true || array(plan?.items).some(item => item?.mirrorRiskRequiresAcknowledgement === true || item?.publicMirror === true || item?.sourceMode === 'public-mirror' || safeQueryOrigin(item?.registry) === 'https://registry.npmmirror.com');
+    const mirrorAcknowledgementRequired = plan => plan?.mirrorRiskRequiresAcknowledgement === true || array(plan?.items).some(item => item?.mirrorRiskRequiresAcknowledgement === true || item?.publicMirror === true || item?.publicFallback === true || item?.sourceMode === 'public-mirror' || item?.sourceMode === 'public-fallback' || safeQueryOrigin(item?.registry) === 'https://registry.npmmirror.com');
     const operationResultTitle = operation => isMigration(operation) ? 'migrationResults' : isRestore(operation) ? 'restoreResults' : 'batchResults';
     const resultStatus = item => item?.installMode === 'registry-migration' && item.status === 'updated' ? 'migrated' : string(item?.status) || 'unknown';
     const mirrorPlanRows = plan => {
@@ -684,6 +692,7 @@ window.__ModuleLoader__.load({
       const restoring = isRestore(plan.operation), selfUpdating = isSelf(plan.operation), migrating = isMigration(plan.operation);
       const githubUpdating = selfUpdating && array(plan.items).some(item => item.sourceKind === 'git');
       const publicMirror = mirrorAcknowledgementRequired(plan);
+      const publicFallback = selfUpdating && array(plan.items).some(item => item.sourceMode === 'public-fallback');
       const unionGeneration=array(plan.items).some(item=>item.installMode==='union-generation');
       const ref = useRef(null), cancel = useRef(null); const [ack, setAck] = useState(false), [now, setNow] = useState(Date.now());
       const [taskPolicy, setTaskPolicy] = useState('wait-for-idle'), [confirmCancel, setConfirmCancel] = useState(false), [confirmPublicMirror, setConfirmPublicMirror] = useState(false), [confirmUnionGeneration,setConfirmUnionGeneration]=useState(false);
@@ -722,14 +731,14 @@ window.__ModuleLoader__.load({
       h('ul', { className: 'pud-dialog-list', 'aria-label': t(operationResultTitle(plan.operation)) }, ...reviewItems),
       migrating ? h('p', { className: 'pud-note pud-warning', 'data-testid': 'pud-migration-safety' }, t('migrationSafety')) : null,
       publicMirror ? h('div', { className: 'pud-note pud-warning', 'data-testid': 'pud-public-mirror-safety' },
-        h('p', { className: 'pud-small' }, t('mirrorSafety')),
+        h('p', { className: 'pud-small' }, t(publicFallback ? 'publicFallbackSafety' : 'mirrorSafety')),
         mirrorPlanEvidence(plan).complete ? h(React.Fragment, null,
           h('strong', null, t('mirrorRegistryPlan')),
           h('dl', { className: 'pud-definition pud-small' }, ...mirrorPlanEvidence(plan).rows.map((row, i) => h(React.Fragment, { key: i }, h('dt', null, t(row.label)), h('dd', null, row.origin || t('querySourceUnknown')))))) : h(React.Fragment, null,
           h('p', { className: 'pud-muted pud-small', 'data-testid': 'pud-mirror-plan-unavailable' }, t('mirrorPlanUnavailable')),
           h('p', { className: 'pud-muted pud-small' }, t(mirrorPlanEvidence(plan).fallbackLabel))),
-        h('ul', { className: 'pud-list pud-small' }, ...array(plan.items).filter(item => item?.publicMirror || item?.sourceMode === 'public-mirror' || safeQueryOrigin(item?.registry) === 'https://registry.npmmirror.com').map((item, i) => h('li', { key: i }, string(item.name), ' · ', safeQueryOrigin(item.registry) || t('querySourceUnknown')))),
-        h('label', { className: 'pud-ack' }, h('input', { type: 'checkbox', className: 'pud-check', checked: confirmPublicMirror, onChange: event => setConfirmPublicMirror(event.target.checked), 'data-testid': 'pud-confirm-public-mirror' }), h('span', null, t('acknowledgeMirror')))) : null,
+        h('ul', { className: 'pud-list pud-small' }, ...array(plan.items).filter(item => item?.publicMirror || item?.publicFallback || item?.sourceMode === 'public-mirror' || item?.sourceMode === 'public-fallback' || safeQueryOrigin(item?.registry) === 'https://registry.npmmirror.com').map((item, i) => h('li', { key: i }, string(item.name), ' · ', safeQueryOrigin(item.registry) || t('querySourceUnknown')))),
+        h('label', { className: 'pud-ack' }, h('input', { type: 'checkbox', className: 'pud-check', checked: confirmPublicMirror, onChange: event => setConfirmPublicMirror(event.target.checked), 'data-testid': 'pud-confirm-public-mirror' }), h('span', null, t(publicFallback ? 'acknowledgePublicFallback' : 'acknowledgeMirror')))) : null,
       githubUpdating ? h('p', { className: 'pud-note pud-warning', 'data-testid': 'pud-github-safety' }, t('githubConfirmSafety')) : null,
       h('fieldset', { className: 'pud-policy' }, h('legend', null, t('taskPolicy')),
         h('label', { className: 'pud-policy-choice' }, h('input', { type: 'radio', name: 'pud-task-policy', value: 'wait-for-idle', checked: taskPolicy === 'wait-for-idle', onChange: () => { setTaskPolicy('wait-for-idle'); setConfirmCancel(false); } }),

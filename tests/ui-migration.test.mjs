@@ -68,6 +68,18 @@ test('public mirror acknowledgement remains separate from ordinary operation acc
   const commit=section('      const commit =','      const cancelSelfWait =');assert(commit.includes('mirrorAcknowledgementRequired(plan) && confirmPublicMirror === true'));
 });
 
+test('official query public fallback confirmation labels the actual source and requires independent risk consent',()=>{
+  const plan={...basePlan,operation:'host-self-update',mirrorRiskRequiresAcknowledgement:true,hostRegistryPlan:{queryRegistry:'https://registry.npmjs.org',registry:null,resolved:'https://registry.npmjs.org',fallbackRegistries:['https://registry.npmmirror.com']},items:[{name:'dsh-plugin-update-doctor',from:'0.5.3',to:'0.5.4',publicFallback:true,sourceMode:'public-fallback',registry:'https://registry.npmjs.org'}]};
+  assert.equal(predicates.mirrorAcknowledgementRequired(plan),true);
+  const harness=dialogHarness(plan),tree=harness.render();
+  assert(text(tree).includes('版本查询来自官方 npm'));assert(text(tree).includes('不会改动你的全局源设置'));assert(text(tree).includes('https://registry.npmmirror.com'));
+  assert(!text(tree).includes('本次使用固定公共 npm 镜像，'));
+  const ack=descendants(tree).find(node=>node.type==='input'&&node.props.type==='checkbox'&&!node.props['data-testid']);ack.props.onChange({target:{checked:true}});
+  assert.equal(harness.primary().props.disabled,true);
+  harness.find('pud-confirm-public-mirror').props.onChange({target:{checked:true}});assert.equal(harness.primary().props.disabled,false);
+  harness.primary().props.onClick();assert.equal(harness.confirmations[0].confirmPublicMirror,true);assert.equal(harness.confirmations[0].confirmCancel,undefined);
+});
+
 test('ordinary mirror batch uses the same explicit source acknowledgement without self-update semantics',()=>{
   const plan={...basePlan,operation:'batch-update',items:[{name:'owned-plugin',from:'1.0.0',to:'1.1.0',registry:'https://registry.npmmirror.com',installMode:'registry-spec'}]};
   assert.equal(predicates.mirrorAcknowledgementRequired(plan),true);const harness=dialogHarness(plan),tree=harness.render();

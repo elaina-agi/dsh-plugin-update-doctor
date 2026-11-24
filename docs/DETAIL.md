@@ -1,6 +1,6 @@
 # 插件在线更新 · 使用与边界
 
-> **v0.5.3 本地修复版，尚未发布到公共 npm；公共 npm 仍为 v0.5.0。** 本地包须经官方管理器另行安装，本机0.5.3安装及用户确认的WSL0.26.2→0.29.0升级已经由日志与16/16active状态核对；这不等于另一台设备已验证。此文档是安装后的仓库补充，未覆盖或重装已验收的0.5.3归档。新增Union路线不在旧0.5.1包中，也不是宿主热加载修复。
+> **v0.5.4 · Windows x64 · 独立第三方插件。** 支持符合条件的在线更新和独立自身升级。官方npm／固定公共镜像与备用源计划经过原包比对、计划绑定和额外确认，不更改全局源配置；npmmirror下载只允许精确同包同版本路径单跳固定CDN。真实用户结果、隔离测试与未覆盖范围见[验证记录](<VERIFICATION.md>)。
 
 ## 使用流程
 
@@ -43,16 +43,16 @@ WSL 准入、schema4、原包证明及未知结果保护见[结构准入说明](
 - 记录未知、读取失败或实际状态变化时拒绝同包重发／恢复，不覆盖外部安装。
 - 文件使用检查只提供辅助证据，不杀进程、不强制释放句柄、不提权、不改ACL，不批准脚本或版本豁免。
 - 本机诊断不上传，分享前仍须人工检查脱敏内容。
-- 0.5.3打包时完整回归358项：344通过、14明确跳过、0失败；完整归档和隔离Host测试通过。本机用户WSL升级已确认，截图确认中文深色列表和可选候选；**第二台设备、实际发行版任务连续性、全部主题／英文／键盘／窄屏交互尚未验收**。源码检查与Client资源供给不是完整视觉验收。
+- 0.5.4来源修复完整回归368项通过；真实镜像原包只读比对、隔离Host正常更新及目标失败后恢复通过。本机真实npm0.5.0→0.5.3自身升级和WSL升级已核验；**第二台设备、实际发行版任务连续性、真实镜像升级全过程、全部主题／英文／键盘／窄屏交互尚未全面验收**。源码检查与Client资源供给不是完整视觉验收。
 - 运行要求为Windows x64、DSH插件运行Node≥24及受支持Host服务；只读文件使用助手需要.NET Framework4.x和执行许可。详情见[Windows运行要求](<WINDOWS_REQUIREMENTS.md>)。诊断不可用／未知不代表没有文件占用。
 
-本文件作为使用说明，不声明图像型 `meta.detail`；插件详情使用README回退。详见[更新说明草稿](<RELEASE_NOTES_0_5_1.md>)和[验证记录](<VERIFICATION.md>)。
+本文件作为使用说明，不声明图像型 `meta.detail`；插件详情使用README回退。详见[历史更新说明](<RELEASE_NOTES_0_5_1.md>)和[验证记录](<VERIFICATION.md>)。
 
 ---
 
 # Plugin online updates · Usage and boundaries
 
-> **Local-test v0.5.3 is not published to public npm. Public npm remains v0.5.0. Local archives require separate official-manager installation. The local v0.5.3 installation and user-confirmed WSL 0.26.2 → 0.29.0 upgrade were verified in logs and 16/16 active Host rows; this is not second-device verification. These repository docs were updated after installation without rebuilding, replacing or reinstalling the reviewed archive. The older v0.5.1 package does not include this Union route.**
+> **v0.5.4 · Windows x64 · Independent third-party plugin.** Supports eligible online updates and separate self-update. Official npm, the fixed public mirror and public fallback plans require archive comparison, plan binding and additional consent without changing global registry settings. npmmirror permits one exact package/version redirect to its fixed CDN. User results, isolated tests and verification limits are recorded separately in [Verification](<VERIFICATION.md>).
 
 **Check all updates → select eligible compatible stable releases → Update selected → review and confirm → inspect per-plugin results.**
 

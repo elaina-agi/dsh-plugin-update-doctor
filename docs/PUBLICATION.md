@@ -1,51 +1,46 @@
-# Publication and privacy notes
+# 发行与隐私规范
 
-The initial public source snapshot was v0.3.0 under MIT. v0.4.0 added a narrowly admitted npm self-update handoff; v0.5.0 adds a separate fixed-commit GitHub handoff. **v0.5.0 is now published on public npm**, following the user's separate publication action. It is an independent third-party bundle, not an official DSH component. Self-update experiments use DSH Desktop 0.2.2-rc.5 on Windows x64; earlier update experiments use 0.2.2-rc.3.
+本插件是MIT许可的独立第三方DSH bundle，不是官方DSH组件。使用说明不保存短期发行或标签状态，**可安装版本由npm／官方插件管理器实际查询决定**。功能限制、来源准入和验证范围仍须明确，不能把发行操作或静态测试当作真实升级成功。
 
-The latest repository Markdown includes a post-install user-upgrade record and [Windows runtime requirements](<WINDOWS_REQUIREMENTS.md>). This documentation-only follow-up does not overwrite, rebuild or reinstall the reviewed0.5.3 archive. A later distribution requires explicit authorization and a new artifact check.
+## 发行检查
 
-## What is public
+1. 在正式源码仓库、Node24+环境运行完整回归并审查差异；核对manifest、运行资源、许可证及固定只读原生助手。
+2. 生成独立版本归档，核验实际文件清单、运行文件摘要与文档包内链接。不要覆盖已经验收或发布的归档。
+3. 发布具体已核验的归档，而不是把临时目录一起上传。登录和二次认证在用户本机完成，不在会话中索取或保存令牌。
+4. 发布后查询公开版本、下载归档并比较摘要；处理中的registry响应不能视为已可下载。npm同一已发行版本不能覆盖。
+5. 本地commit、GitHub push、npm发布和用户安装是不同动作，分别获得授权并核验。上传GitHub本身不会自动发布npm，也不会迁移现有安装来源。
 
-- Plugin source, locale/icon resources, documentation and regression tests.
-- Read-only native helper source, its build script and the shipped Windows x64 executable.
-- Experiment runners and carefully scoped summaries. Public package names, versions and package digests identify reproducible inputs; they are not user secrets.
+建议由官方插件管理器安装 `dsh-plugin-update-doctor`，以实际 `latest` 和兼容检查解析目标；固定版本可用于复现和自身更新测试。本地文件／链接、固定GitHub和npm安装的后续更新策略不同，详见[自身升级规则](<SELF_UPDATE.md>)。
 
-## What is not uploaded
+## 包内允许内容
 
-- Raw experiment JSON, local diagnostic history, installation identities, staged archives or configuration.
-- Credentials, browser/session data, user profile contents, machine-specific directories and generated logs.
-- Original local development history. The first public commit is a clean source snapshot; the prior local history remains local.
+- 插件Host／Client运行代码、locale、图标、manifest、声明补丁和使用文档。
+- 只读原生助手源代码、构建脚本与对应Windows x64可执行文件。
+- MIT许可证。仓库中的测试和可公开实验方法不必随npm运行包分发。
 
-The review covers candidate source files, prior local commits and the helper's ASCII/UTF-16 strings and PE debug directory. The helper contains no PDB reference. This is a scoped audit, not a guarantee that every possible secret format is detectable. Ignored files remain local rather than being rewritten and presented as new experiment results.
+## 不上传的内容
 
-Retained-evidence tests explicitly skip when private local results are absent. A public clone can run normal regressions without those results; skipped evidence is not a pass or a repeat of a historical Host experiment. Existing but invalid evidence must fail.
+- 原始实验JSON、诊断历史、receipt／安装身份、staged归档与用户配置。
+- 凭据、浏览器／会话数据、DSH profile、机器路径、临时工作副本和日志。
+- `.tools`、开发依赖、私人缓存与安装包输出目录；安装包作为明确发行产物单独处理，不混入源码commit。
 
-## v0.5.3 本地修复补充
+助手字符串、PE调试信息及源码的审查是限定隐私检查，不保证检测所有秘密格式。忽略文件保留本地，不伪造新的实验结果或上传真实profile。截图和分享的诊断仍需要人工复查。
 
-本版修复WSL固定版本名单拦截，改为绑定公开原包的结构／宿主声明契约和完整保留原包证明；原版rc.5隔离0.26.2→0.29.0更新及预准备旧恢复通过。schema4与未知结果拒绝保护见[说明](<WSL_STRUCTURAL_0_5_3.md>)。本版未发布npm、未推送，本机0.5.3安装已确认，用户随后在真实面板执行WSL0.26.2→0.29.0成功，日志/资源核验通过、16/16Host条目active。安装更新器不会自动更新WSL或Union；后续操作必须由用户另行确认。
+## 可复现发行归档记录
 
-## v0.5.2阶段记录（未发布公共npm）
+以下是不可变归档身份，不是当前 `latest` 声明，也不是所有用户已经安装的证明。
 
-v0.5.2本地测试包与先前0.5.1测试包不同，新增仅已审查Union24→25完整依赖本地代际，原型及生产限定隔离路径通过；常规Unionnpm/HMR失败事实不变，这不是修补DSH。新来源／确认／schema3与恢复限制见[Union代际说明](<UNION_GENERATION_0_5_2.md>)。未推送或发布公共npm；本地安装须另行确认，最终归档与本机安装状态以交付验收记录为准，不自动替换真实Union。历史0.5.1和公共0.5.0归档不被覆盖。
+| 输入 | 文件数／字节数 | SHA256 |
+|---|---|---|
+| npm 0.5.0（2026-11-21核验） | 36／122,671 | `e06a9b565aa38974b98db92ee83cf73146eed729aaef15a392c2603342babc15` |
+| npm 0.5.3（2026-11-24核验） | 48／201,051 | `a05a5594af5d440e8ef3ac286f3efed8cad22dd116a03423352d1d08512887f6` |
 
-## Distribution（以下0.5.1为历史状态）
+原npm0.5.0源码提交为 `7eb59f934ae80ee5636bddfbc79afa67bbc2970e`，SHA1 `f9bab2c9a2e2a0eeb61038805006060f269bee34`。npm0.5.3 SHA1为 `b73a14f02628d5133d6539c1eb70b3c2376cae96`。二者是版本精确的公共输入，不随未来标签变动改写。
 
-The local v0.5.1 development revision implements corrected source-scoped version discovery, separation of discovery from replacement admission, exact npm-source preservation through the public Host updater, independently confirmed same-version migration of identified older Doctor archives, fixed public-mirror self-update, reviewed unchanged JS dependency graphs, the isolated WSL 0.26.2 to 0.28.0 generation path, and a separate Doctor-owned archive check/navigation entry on detail pages. These are narrowly reviewed development paths, not universal hot updates. **Safe no-restart Union Search update/migration/recovery is blocked in the current HMR environment. Blocking is risk handling, not a fix. Installing this updater alone does not resolve that problem.** Separate Union or Node/Electron research is not a shipped updater capability and does not justify Host patching or debugger injection by the plugin. Prepared bytes are evidence, not the Host's refetched artifact transaction.
+用户在原npm0.5.0面板确认到0.5.3的真实自身更新已核验：官方applied、新实例verifiedApplied、48文件一致、Host1/1active。测试临时使用官方源／无fallback，结束后原设置恢复；它不证明真实镜像升级或默认网络fallback切换。WSL0.26.2→0.29.0真实记录、0.5.4默认公共备用源／固定CDN修复的隔离测试及剩余边界见[验证记录](<VERIFICATION.md>)。
 
-At the historical v0.5.1 packaging checkpoint it had not been published, pushed or installed in the user's profile; the user later separately authorized local0.5.1/0.5.2/0.5.3 installations. None of these actions published a new npm version. At that historical checkpoint, candidate archive resources and owned isolated stock Host installation/limited flows had been checked; real-user upgrades, public old-version self-update and live browser acceptance were still pending. The later local WSL0.29.0 user-upgrade record appears above and does not retrospectively change that checkpoint. The public v0.5.0 artifact and its digests below remain unchanged. See the [draft release notes](<RELEASE_NOTES_0_5_1.md>) and [release review checklist](<RELEASE_REVIEW_0_5_1.md>). Publication requires a new reviewed artifact and explicit authorization; source tests alone are not live-update or browser evidence.
+## 验证与支持口径
 
-On **2026-11-21 (Asia/Shanghai)**, read-only checks confirmed that [public npm serves v0.5.0](<https://registry.npmjs.org/dsh-plugin-update-doctor/0.5.0>), the package's `latest` tag is `0.5.0`, and the [tarball](<https://registry.npmjs.org/dsh-plugin-update-doctor/-/dsh-plugin-update-doctor-0.5.0.tgz>) is downloadable with HTTP 200. The downloaded bytes match the reviewed publication artifact:
+只声明已实现并验证的限定路径，不宣称所有插件都能无重启更新、恢复永远成功、精确字节原子事务或全部浏览器交互已验收。目标更新、恢复、Host激活、包文件和页面同步分别核验。保留证据测试缺本地结果时明确skip，skip不是历史实验复跑；存在但不符或损坏的证据必须失败。
 
-- Source commit: `7eb59f934ae80ee5636bddfbc79afa67bbc2970e`.
-- Archive size: **122,671 bytes**; **36 packaged files** in the pre-publication pack review.
-- SHA256: `e06a9b565aa38974b98db92ee83cf73146eed729aaef15a392c2603342babc15`.
-- npm SHA1: `f9bab2c9a2e2a0eeb61038805006060f269bee34`.
-- npm integrity: `sha512-ekZzyGVL7MwqENAjP0f6IYHDBmkCGYcf5zndRdb8uoC7pg/kE41beqXiwPPiebXwlyL95Es06Tq8R0J3Fgrjhg==`.
-
-The user performed the npm publication; these subsequent checks did not publish, install or change a live profile. Public archive availability and integrity are not evidence of a real npm-source DSH installation or a future live self-update.
-
-The [README](<../README.md>) documents npm installation through DSH's official Plugin Manager with `dsh-plugin-update-doctor@0.5.0`, plus fixed-commit GitHub and local-source alternatives. npm publication does not migrate an existing GitHub installation. npm self-update admission remains separate from first installation and can refuse Host registry plans with fallback or unsupported dependencies.
-
-The GitHub source upload itself does **not** publish npm or create a GitHub Release. npm publication was a separate action; no GitHub Release is asserted here. The published v0.5.0 archive retains documentation written before publication, including the earlier no-npm-publication status. This repository documentation update does not rebuild or overwrite that archive. Consult the [current repository README](<https://github.com/elaina-agi/dsh-plugin-update-doctor#readme>) for current installation guidance. A later package change requires a new version, a separate publication decision and another check of the actual artifact contents.
-
-Before reporting an issue, manually review copied diagnostics and screenshots. Remove usernames, full paths, credentials and private configuration; do not attach raw experiment JSON or the DSH profile directory.
+常规Union Search npm/HMR故障和独立完整依赖代际路线不混淆；底层DSH／Node修补研究不是本插件能力。查看[Union说明](<UNION_GENERATION_0_5_2.md>)、[Windows要求](<WINDOWS_REQUIREMENTS.md>)与[历史更新说明](<RELEASE_NOTES_0_5_1.md>)。

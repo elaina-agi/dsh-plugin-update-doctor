@@ -102,7 +102,7 @@ test('source resolves safely during ordinary preparation, without bypassing orig
 test('source change during final pre-task checks prevents cancellation and all management operations', async t => {
     let entered=0; const f=await serviceFixture(t,{gate:{cancellationTargets:()=>[],run:async()=>{entered++;}}});
     const plan=await f.service.prepareBatch([{name:'sample-plugin',version:'1.1.0'}]);
-    f.service.probeLocks=async()=>{f.state.registry=MIRROR;return {files:[]};};
+    f.service.identities.prepare=async()=>{f.state.registry=MIRROR;};
     const started=await f.service.commit(plan.ticket,{taskPolicy:'cancel-active',confirmCancel:true});
     await f.service.jobs.get(started.operationId).work;
     assert.equal(entered,0); assert.deepEqual(f.calls,[]);

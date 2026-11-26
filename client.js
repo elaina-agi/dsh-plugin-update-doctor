@@ -751,6 +751,12 @@ window.__ModuleLoader__.load({
       const date = new Date(value); if (!Number.isFinite(date.valueOf())) return t('noValue');
       try { return date.toLocaleString(string(locale) || 'en'); } catch { return date.toLocaleString('en'); }
     }
+    /** Observed wall time for one plugin in a batch; the value comes from the Host record. */
+    function durationText(milliseconds) {
+      const value = Number(milliseconds);
+      if (!Number.isFinite(value) || value <= 0) return null;
+      return value < 10_000 ? (value / 1000).toFixed(1) + ' s' : Math.round(value / 1000) + ' s';
+    }
     function CommitDetails({ value, t }) {
       if (!value || value.sourceKind !== 'git') return null;
       return h('div', { className: 'pud-note pud-small', 'data-testid': 'pud-github-commits' },
@@ -791,7 +797,8 @@ window.__ModuleLoader__.load({
         return h('tr', { key: string(item.name) || i },
         h('td', { className: 'pud-break pud-package-cell' }, valueOf(item.name, t('noValue'))),
         h('td', null, valueOf(item.from, t('noValue'))), h('td', null, valueOf(item.to, t('noValue'))),
-        h('td', null, h(Badge, { value: resultStatus(item), t })),
+        h('td', null, h(Badge, { value: resultStatus(item), t }),
+          durationText(item.ms) ? h('div', { className: 'pud-muted pud-small', 'data-testid': 'pud-item-duration' }, durationText(item.ms)) : null),
         h('td', null, item.restoreKind === 'restart-required-removal' ? h('p', { className: 'pud-warning pud-small', 'data-testid': 'pud-restart-rollback' }, t('restartRollback')) : null,
            h(Verification, { verification: item.verification, t }),
            item.restore ? h('div', { className: 'pud-note pud-small' }, t('recoveryOutcome'), ' · ', h(Badge, { value: string(item.restore.application) || 'unknown', prefix: 'outcome', t }), h(Verification, { verification: item.restoreVerification, t })) : null),
@@ -1197,7 +1204,7 @@ unionGeneration ? h('div', { className: 'pud-note', 'data-testid': 'pud-union-ge
         h('strong', null, restartPending ? t('restartPending') : t(restartLast.outcome === 'applied' ? 'restartApplied' : restartLast.outcome === 'rolled-back' ? 'restartRolledBack' : 'restartUnknown')),
         h('span', { className: 'pud-muted pud-small' }, ' · ', (restartPending ?? restartLast).name, ' ', restartPending ? restartPending.from + ' → ' + restartPending.to : restartLast.outcome === 'rolled-back' ? restartLast.from : restartLast.to));
       const header = h('header', { className: 'pud-header' },
-        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.6.14')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
+        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.6.15')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
           h('div', { className: 'pud-meta pud-muted' }, h('span', null, t('profile') + ': ', valueOf(snapshot?.profile, t('noValue'))), h('span', null, t('runtime') + ': ', valueOf(snapshot?.runtimeVersion, t('noValue'))))),
         h('div', { className: 'pud-toolbar' },
           h('button', { type: 'button', className: 'pud-btn', disabled: !!pending, onClick: () => { void refresh(); }, 'data-testid': 'pud-refresh' }, t('refresh')),

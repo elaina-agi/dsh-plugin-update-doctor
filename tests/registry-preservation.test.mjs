@@ -126,3 +126,15 @@ test('registry recovery mode reads with archive schema1 compatibility and reject
     assert.throws(()=>reload.validateRecovery({...recovery,installMode:'unexpected'}));
     assert.throws(()=>reload.validateRecovery({...recovery,installMode:'registry-spec',next:{...recovery.next,runtimeGeneration:{}}}));
 });
+
+
+test('a recovery whose installed tree could not be inspected stores an unavailable graph safely', async t => {
+    const f = await serviceFixture(t), old = await f.stager.stage(name, '1.0.0'), next = await f.stager.stage(name, '1.1.0');
+    const recovery = { id: 'owned-null-graph', failedBatchId: 'owned-batch', name, from: '1.0.0', to: '1.1.0', enabled: true,
+        previous: f.stager.reference(old), next: f.stager.reference(next), status: 'prepared',
+        expectedFingerprint: f.service.fingerprint(f.bundles[0]), installMode: 'registry-spec', dependencyGraph: null };
+    await f.service.identities.prepare(recovery);
+    const reload = new IdentityStore(f.service.identities.path); await reload.load();
+    assert.equal(reload.warning, null);
+    assert.equal(reload.recovery(name).dependencyGraph, null);
+});

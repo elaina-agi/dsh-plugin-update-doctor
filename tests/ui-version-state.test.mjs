@@ -152,3 +152,33 @@ test('table uses independent state constructors while checkbox and prepare retai
   assert(t('ZH')('reason.host-runtime-dependencies').includes('这不是已确认会替换宿主'));
   assert.equal(t('ZH')('taskPolicy'), '更新前任务处理');
 });
+
+test('download preflight refusal keeps the discovered version and names the failed step', () => {
+  const item = { ...base, versionStatus: 'available', updateStatus: 'blocked', latestVersion: '2.0.0',
+    packagePreflight: { status: 'failed', code: 'package-archive-fetch-failed', phase: 'archive' } };
+  for (const locale of ['ZH', 'EN']) {
+    const output = text(render(item, locale));
+    assert(output.includes(t(locale)('version.available')));
+    assert(output.includes(t(locale)('reason.package-archive-fetch-failed')));
+    assert(!output.includes(t(locale)('update.available')));
+  }
+  assert.equal(helpers.eligible(item), false);
+  const ready = { ...item, canUpdate: true, updateStatus: 'available', packagePreflight: { status: 'passed' } };
+  assert(text(render(ready)).includes('安装包预检通过，可继续确认'));
+});
+
+test('request failure shows a localized actionable heading and keeps technical codes inside details', () => {
+  const issue = { code: 'package-archive-fetch-failed', diagnostic: 'Package archive download failed.' };
+  const tree = vm.runInNewContext(`
+    ${section('      const errorText =', '      const detailBundle =')}
+    ${section('      const failure =', '      const history =')}
+    failure;
+  `, { error: issue, t: t('ZH'), h: elements,
+    string: value => typeof value === 'string' ? value : '',
+    localText: (translator, key, fallback) => translator(key) === key ? fallback : translator(key) });
+  assert.equal(tree.props.role, 'alert');
+  assert(text(tree.children[0]).includes('下载更新包失败'));
+  assert(!text(tree.children[0]).includes(issue.code));
+  const detail = tree.children.find(node => node.type === 'details');
+  assert(detail && text(detail).includes(issue.code)); assert(!detail.props.open);
+});

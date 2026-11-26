@@ -26,7 +26,7 @@ test('user-facing release docs keep source migration and byte/refetch guarantees
 test('documentation separates tested user results, runtime requirements and remaining validation',async()=>{
  const main=await read('README.md'),requirements=await read('docs/WINDOWS_REQUIREMENTS.md'),verification=await read('docs/VERIFICATION.md'),wsl=await read('docs/WSL_STRUCTURAL_0_5_3.md'),windows=await read('docs/WINDOWS_SUPPORT.md'),detail=await read('docs/DETAIL.md');
  for(const [file,text]of [['README.md',main],['docs/VERIFICATION.md',verification],['docs/WSL_STRUCTURAL_0_5_3.md',wsl]]){assert(text.includes('0.29.0'),file);assert(text.includes('16/16'),file);}
- assert(main.includes('第二台设备尚未实测'));assert(main.includes('不再仅限固定版本名单'));assert(main.includes('真实网络fallback切换'));assert(!main.includes('目前的 WSL 特例仅接受已验证版本'));
+ assert(main.includes('第二台设备尚未实测'));assert(main.includes('行集合和 `!!js` 表达式不再逐版本审查'));assert(main.includes('真实网络fallback切换'));assert(!main.includes('目前的 WSL 特例仅接受已验证版本'));
  assert(requirements.includes('DSH实际执行插件的Node ≥24'));assert(requirements.includes('.NET Framework 4.x'));assert(requirements.includes('不需要C#编译器'));assert(requirements.includes('诊断未知并不是所有路线的统一硬阻断'));assert(requirements.includes('历史验收包不被覆盖'));assert(!/Flyking|C:[\\/]/.test(requirements));
  assert(verification.includes('22:12:13–22:12:29'));assert(verification.includes('没有触发旧版恢复'));assert(windows.includes('0.5.4来源修复'));assert(windows.includes('0.5.1阶段已实现的路径（历史）'));assert(windows.includes('完整依赖本地代际路线'));
  assert(detail.includes('第二台设备'));assert(detail.includes('.NET Framework 4.x'));assert(!detail.includes('真实用户升级和新界面浏览器交互尚未验收'));

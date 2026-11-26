@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TaskGate } from '../lib/task-gate.js';
-import { scanUpdates, onlineSafety } from '../lib/online.js';
+import { scanUpdates, onlineSafety, capabilityDelta } from '../lib/online.js';
 
 function fakeAgent({ running = false } = {}) {
     const idle = Promise.withResolvers(); if (!running) idle.resolve();
@@ -39,9 +39,21 @@ test('latest compatible stable bundle chosen, prerelease/incompatible/deprecated
     const manager = { listVersions: async () => ({ status: 'listed', registry: 'https://registry.npmjs.org', versions: [{ version: '2.0.0-beta.1', bundle: true, prerelease: true }, { version: '1.9.0', bundle: true, incompatible: {} }, { version: '1.8.0', bundle: true, deprecated: 'old' }, { version: '1.7.0', bundle: true }] }) };
     const result = await scanUpdates(manager, [{ name: 'sample', version: '1.0.0', canUpdate: true, reasons: [] }]); assert.equal(result[0].latestVersion, '1.7.0');
 });
-test('high-risk Host/core/native runtime updates are blocked', () => {
+test('only the prerequisites and the updater itself are still refused', () => {
     const base = { name: 'sample', version: '1.0.0', removable: true, availability: 'profile', update: 'registry' };
     assert.equal(onlineSafety(base, { name: 'sample', version: '1.0.0' }).permitted, true);
-    assert.equal(onlineSafety(base, { name: 'sample', version: '1.0.0', dependencies: { '@deepseek-ai/dsh-agent': '1' } }).permitted, false);
-    assert.equal(onlineSafety({ ...base, overrides: ['subprocess'] }, { name: 'sample', version: '1.0.0' }).permitted, false);
+    assert.equal(onlineSafety(base, { name: 'sample', version: '1.0.0', dependencies: { '@deepseek-ai/dsh-agent': '1' } }).permitted, true, 'declared runtime dependencies no longer refuse the update');
+    assert.equal(onlineSafety(base, { name: 'sample', version: '1.0.0', dependencies: { 'node-pty': '1.0.0' } }).permitted, true, 'native payloads are recorded, not refused');
+    assert.equal(onlineSafety({ ...base, name: 'dsh-plugin-update-doctor' }, { name: 'dsh-plugin-update-doctor', version: '1.0.0' }).permitted, false);
+    assert.equal(onlineSafety({ ...base, removable: false }, { name: 'sample', version: '1.0.0' }).permitted, false);
+    assert.equal(onlineSafety({ ...base, update: 'archive' }, { name: 'sample', version: '1.0.0' }).permitted, false);
+});
+
+test('only a new or changed core Host override counts as a takeover', () => {
+    const own = { rows: [{ id: 'sample', name: 'sample' }], overrides: [] };
+    assert.deepEqual(capabilityDelta(own, own), []);
+    assert.deepEqual(capabilityDelta(own, { ...own, rows: [...own.rows, { id: 'subprocess', name: 'sample' }] }), ['core-service-takeover']);
+    assert.deepEqual(capabilityDelta({ ...own, overrides: [{ id: 'hmr', config: { root: [] } }] }, { ...own, overrides: [{ id: 'hmr', config: { root: [] } }] }), []);
+    assert.deepEqual(capabilityDelta(own, { ...own, overrides: [{ id: 'hmr', config: { root: [] } }] }), ['core-service-takeover']);
+    assert.deepEqual(capabilityDelta(own, { ...own, rows: [...own.rows, { id: 'own-row', name: './lib/x.mjs' }] }), [], 'non-core rows are not this gate');
 });

@@ -1,5 +1,197 @@
 # 验证记录与支持边界
 
+## v0.6.14：删除镜像一致性预比对
+
+- 预检查归档本就取自官方 npm；镜像一致性由「装后：实际落盘文件 vs 暂存官方归档」逐字节核验覆盖，因此删除 `stage()` 里的镜像元数据/整包二次比对（每插件少一次整包下载，也消除了 `./bin` 规范化一类误判）。
+- 保留：镜像归档的一次精确 CDN 跳转支持、SRI/归档字节核验、装后逐字节核验、失败回滚。
+- 回归 **449 项通过**；镜像用例改为断言「预检查只访问官方源」「只允许一次规范 CDN 跳转」「非规范跳转仍拒绝」。
+- 限制：不再声称更新前已证明镜像与官方一致，改由装后核验保证。
+
+## v0.6.13：镜像元数据 `./bin` 规范化
+
+- 用户 profile 查询源为 `registry.npmmirror.com`；`dsh-trust-check`、`dsh-cost-meter` 因 `bin` 路径的 `./` 前缀在 npm 元数据里被规范化、tarball 里保留，被判 `mirror-runtime-metadata-mismatch`。
+- 修复：镜像一致性比对对 `bin`/`main` 统一去掉前导 `./` 后比较；其余字段与字节/SRI/归档完整性校验不变。
+- 真实包复核：`dsh-trust-check@0.2.6`、`dsh-cost-meter@1.9.94` 以镜像来源 `stage()` 通过。
+- 回归 **450 项通过**（新增 1 项）。
+
+## v0.6.12：面板显示宿主包依赖
+
+- 行内徽标 `pud-host-dependencies-badge` + 详情 `pud-host-dependencies`，仅在 `packagePreflight.hostDependencies` 非空时渲染；文案明确「更新仍会照常尝试」。
+- 回归 **449 项通过**（新增 2 项静态断言：条件渲染、双语语义不含拒绝、不引入确认勾选）。
+- 限制：只反映目标包声明的 `@deepseek-ai/*` 依赖；核心行是否真被停用以 DSH 日志与装后核验为准；浏览器渲染未人工验收。
+
+## v0.6.11：20 款实测，宿主包依赖记为警告
+
+- 20 款真实插件：**17 款 `applied`**；3 款在官方安装阶段失败（`dsh-paste-path`、`dsh-session-fork` 为 `incompatible-version`；`dsh-file-bookmark` 把 `@deepseek-ai/dsh-tools@0.1.7-rc.2` 写成普通依赖，pnpm 提到 profile 根部后 DSH 停用了核心 `tools` 行，安装与更新都停在 `pending (waiting for service: tools)`）。
+- 新增记录字段：预检查与计划里的 `hostDependencies`（目标声明的 `@deepseek-ai/*` 依赖），只记录、不拒绝，用于解释这类失败。
+- 回归 **447 项通过**（新增 1 项：声明宿主包依赖仍放行并被记录）。
+- 限制：`incompatible-version` 与核心行被停用属 DSH/包管理器判定；浏览器渲染未验收。
+
+## v0.6.10：PAX / 长名头解析兼容
+
+- 两个 tar 读取器（`readPackedContents`、`archiveEntries`）现在会跳过 PAX / GNU long-name 元数据条目（`x`/`g`/`L`/`K`），不再把它们当文件校验；链接、路径安全、大小与条目数上限不变。
+- 触发案例：`dsh-session-superagent` 的归档含 PAX 头，旧版报 `unsafe-or-duplicate-archive-path` / `extended-archive-entry-unsupported`；修复后 2.0.0→2.0.2 `applied`。
+- 第三轮 10 款插件：7 款 `applied`、1 款 `restart-required`（`@nanmicoder/dsh-agent-teams`）、2 款宿主判 `bundle-in-use`（`dsh-genui`、`ds-harness-remote`）。
+- 回归 445 项通过。
+
+## v0.6.9：只留「能回滚」的前提
+
+- 删除的拒绝：安装期脚本（`preinstall/install/postinstall`）、依赖里的 `git:`/`http:` 来源、依赖里的宿主运行时包（`@deepseek-ai/*`、`electron`、`node-pty` 等）、相对已安装版本**新增**核心行接线（改为 `coreWiring: true` 证据）、声明里的原生依赖（`sharp` 等）。
+- 依据：pnpm 默认不执行依赖的构建脚本，DSH 管理器读取 `pendingBuilds` / `allowBuilds`，需用户显式批准；宿主运行时依赖由官方管理器自己的「是否改动其它直接依赖」检查兜底（`unexpected-package`）。
+- 保留的前提：公开源 + 精确版本 + 归档字节/SRI、可核验的回滚归档、自身包独立流程、非 profile 管理包。
+- 回归 **445 项通过**（串行，含新增的「已安装树含原生文件仍拒」）。原先断言「原生依赖 / 核心接线 / 安装脚本被拒」的用例改为断言「被记录且可继续」。
+- 唯一保留的例外（实测得出）：已安装树里已有被宿主加载的原生二进制时仍拒绝。`dsh-meme` 在放开后更新触发 `[ERR_PNPM_EPERM]`（无法重命名被锁的 `@img/sharp-win32-x64`），插件被卸载且回滚写不回，属「回滚救不回来」。
+- 已知代价：若新 patch 导致宿主无法启动，回滚代码没有运行机会，只能下次启动后用官方管理器手动处理。
+- 限制：面板不再替用户判断风险；浏览器渲染/点击未验收；确认票据由测试代签。
+
+## v0.6.8：按「少拦、装完看事实、坏了回滚」砍掉静态形状门槛
+
+- 删除的形状类拒绝：patch 行名必须属于自己的包、行 id 前缀像核心服务、group 行与嵌套子行、包内相对模块路径、`bundledDependencies`、归档含原生库或 `node_modules`、依赖树含原生文件。这些都改为**记录**。
+- 装后「依赖版本范围不符」按用户决定降级为**警告并继续**；装后核验不再因为依赖树不可读/范围去重而判失败，判据只剩「精确版本 + 归档字节 + Host 行 active」。
+- patch 解析器现在只做结构校验：id 唯一、路径安全、YAML 合法、大小/深度有界、override 形状受限；核心行只在「相对已安装版本**新增**」时按能力差异拦截。
+- 保留的门槛（回滚救不回来）：公开源 + 精确版本 + 归档字节/SRI、可核验的回滚归档、`preinstall/install/postinstall`、`git:`/`http:` 依赖来源、宿主运行时依赖（`@deepseek-ai/*`、`electron`、`node-pty` 等）、新增核心行接线、自身/宿主管理包。
+- 纸面审计 24 款真实插件的最新 patch：**23 款解析通过**；仅 `ds-harness-remote` 因依赖含非注册表来源仍被拒绝（安装期会执行代码）。
+- 真实重跑：`dsh-mnemon` 0.5.54→0.5.55 与 `dsh-mobile` 0.8.16→0.9.0 现在都能通过检查并进入官方更新，但**官方管理器自己撤销**并以 `unexpected-package` 返回（它会新增/改变另一个直接依赖）；面板如实记失败，旧版本保留。
+- `dsh-remote`：打包依赖不再预拒，安装副本的 `node_modules` 子树由包管理器托管、不参与逐字节比对；其余条目仍逐字节核验（实测它在安装后被解析到最新 1.x，面板报 `state-changed` / `no-update`，属安装源解析而非策略拒绝）。
+- 回归 **445 项通过**（串行），0 失败。
+- 限制：`git:`/`http:` 依赖与安装脚本仍拒绝（执行代码）；官方管理器的撤销无法绕过；浏览器渲染未验收。
+
+## v0.6.7：十款真实插件第二轮实测与四处误伤修复
+
+- 环境同 0.6.6（DSH 0.2.2-rc.5、Electron 44.7.0、Node 24.21.0、Windows x64）：自有临时 `DSH_HOME`/profile/pnpm store；每款插件先用公开 `installBundle('<包>@<旧版本>')` 装入，再走只读检查 → 票据 → 官方 `updateBundle` → 独立核对版本、来源、Host 行与依赖树。
+- 覆盖 10 款（分两组各 5 款、各自独立 profile）：`dsh-free-search` 0.9.86→0.9.88、`dsh-whale-widget` 0.4.0→0.4.2、`dsh-agent-compare` 3.2.0→3.3.0、`dsh-m` 0.12.24→0.12.26、`dsh-perm-gate` 5.7.0→5.7.2、`meow-memory` 0.33.1→0.33.3、`@michengai/dsh-archive-manager` 1.4.1→1.5.0、`@michengai/dsh-skills-manager` 1.5.3→1.5.5、`@liustack/modsearch` 5.10.15→5.10.17、`@tencent-connect/dsh-qqbot` 0.5.3→0.5.5。四处修复后全部 `applied`，安装后与更新后 Host 行均 active。
+- 修复 A：插入行 id 与核心行 id 改为**精确**比对，`agent-compare` 这类命名行不再被 `agent-*` 前缀误判为接管。
+- 修复 B：`prepare` 不再算安装脚本（`dsh-m` 的构建钩子）；只拦 `preinstall`/`install`/`postinstall`。
+- 修复 C：`dependencyGraph: null` 在恢复记录校验中不再触发 `TypeError`（`dsh-qqbot` 曾因此整批中断为 `unknown`）。
+- 修复 D：部分版本范围按 node-semver 语义判定（`^0.12`、`^1.2`、`~1.2`、`>1.2`、`<=1.2` 等），`qrcode-terminal ^0.12` 不再误报 `dependency-version-range-mismatch`。
+- 装后核验失败现在带具体原因（首个字节不符的相对路径，或具体依赖范围错误），不再只有一句 `installed-state-mismatch`。
+- 回归 **444 项通过**（串行），0 失败；新增 3 项（命名行、`prepare`、范围语义），修正 2 条按错误语义写死的旧断言。
+- 打包：72 个文件，摘要记录在 `artifacts/release-0.6.7/archive-verification.json`（不写进文档以免自引用）。
+- 限制：10 款仍是样本，GitHub 直装、私有源、镜像与隔离代际路线不在本轮；`dsh-perm-gate` 自身激活时报 `HMR transactions cannot be nested`（其自身播种逻辑与宿主限制），运行结果未受影响；浏览器渲染/点击/窄屏未验收；确认票据由 runner 代签。
+
+## v0.6.6：真实社区插件实测与三处修复
+
+- 环境：DSH 0.2.2-rc.5、Electron 44.7.0、Node 24.21.0、Windows x64；自有临时 `DSH_HOME`/profile、精确旧版本、真实 AppBoot/Cordis/Loader/HMR/`pluginManager`/`TaskGate`/`RegistryStager` 与原生只读锁探针，没有 mock manager，未触碰用户 profile、WSL、Union 或任务。
+- 矩阵（保留 3 次运行）：`dsh-unlag` 1.17.9→1.17.11 与 `dsh-soul-md` 0.12.3→0.12.5、`dsh-trust-check` 0.2.4→0.2.6 均 3/3 `applied`，`dsh-claude-style` 0.22.0→0.22.2 为 2/3；成功项的安装后版本精确、来源仍为 npm 规格、Host 行 1/1 active，依赖树分别 0/0/3/2 包核验。`dsh-free-search` 0.9.86→0.9.88 三次都停在官方交接前的 npm 网络（一次 `ERR_PNPM_META_FETCH_FAIL`，一次批量被打断记为 `unknown/skipped`，一次元数据查询中断），旧版 0.9.86 始终保留且 active，从未显示为成功。
+- 附加场景（安装后立即更新）：用公开 `installBundle('<包>@<旧版本>')` 在空 profile 装好再检查更新——`dsh-cost-meter` 1.9.90→1.9.92（依赖 2 包/850 文件）与 `deep-view` 0.1.0→0.1.2 均 `applied`；`dsh-meme` 0.1.84 安装成功但更新被 `native-or-shared-runtime` 拒绝（optional `sharp`），其 `libvips-42.dll` 等被 Host 加载后临时目录删除会卡住，本次由 30 秒上限兜住并记录、进程退出后才删除——原生二进制不宜热替换的实证。
+- 附加场景（批量）：同一票据一次更新三件（`dsh-claude-style` 0.22.0→0.22.3、`dsh-soul-md` 0.12.3→0.12.5、`dsh-trust-check` 0.2.4→0.2.6）全部 `applied`，`wait-for-idle`、一次尝试完成，更新后复检全部 `up-to-date`；目标 0.22.3 为当天新发布版本，说明检查用实时版本而非缓存。
+- `dsh-unlag` 的旧版 1.17.9 发布本身损坏（Host 冷启动 `SyntaxError: Unexpected token ')'`，`node --check` 在 index.js:3244 复现）；1.17.11 的 index/client 均通过语法检查。这是真实「坏安装升成好安装」的对照，也是本轮策略缺陷的触发点。
+- 修复 A：标准通道不再把「已安装版本自己改过核心行」当作永久拒绝；改为比较新旧归档的 override（`id`/`disabled`/`config` 全等，`!!js` 按原文），只有新增或改动核心服务接线才判 `core-service-takeover`。patch 解析新增 override 记录（`inspectPatchEntries`），插入行的保护不变。
+- 修复 B：准备阶段的版本查询失败改报 `version-query-failed`，归档下载中断改报 `preflight-network-failed`（`causeKind=network`），不再伪装成「选择已变化」；`networkPreflightError` 沿 `cause` 链识别被包装的传输错误。
+- 修复 C：查询源时 `listVersions` 因网络返回 `refused/network` 不再报 `registry-origin-unverified`，同归可重试类别；检查阶段版本查询中断的行在面板标为可重试。
+- 回归：441 项通过（串行），0 失败（新增 8 项：override 解析、核心能力比对、三类可重试失败与查询失败可重试行）。
+- 打包：72 个文件；自有临时 profile 冒烟通过（Host 激活／Client 资源／原生探针／清理均 true）。摘要记录在 `artifacts/release-0.6.6/archive-verification.json`，不写进文档以免自引用。
+- 限制：仅公开 npm 5 款真实插件与这些版本对；浏览器渲染/点击/窄屏/键盘未验收；确认票据由 runner 代签；本轮 npm 侧存在持续连接抖动，3 次运行共 11/15 次成功，未成功项均为网络而非策略。详细证据见[真实社区插件在线更新对照](<https://github.com/elaina-agi/dsh-plugin-update-doctor/blob/main/experiments/REAL_PLUGIN_UPGRADE_PROOF.md>)。
+
+## v0.6.5：确认弹窗去勾选与检查进度条
+
+- 回归：433 项通过（Node 24 串行），0 失败。
+- 确认弹窗：删除公共镜像、公共备用源、完整依赖代际、来源迁移四个勾选框及勾选文案；只保留插件列表、说明、任务处理选项和取消/确认。服务端显式确认未放宽，面板按对应计划自动附带 `confirmPublicMirror` / `confirmUnionGeneration` / `confirmMigration`。
+- 进度：Host 端 `scanProgressOf` 记录 `phase/current/done/total`，`GET ?action=scan-progress` 轮询；面板渲染 `progressbar`（阶段、当前插件、完成数/总数、百分比），完成后收起。
+- 测试：检查期间读到 preflight/current，完成后 complete 且 done=total；未知 id 400；弹窗无 checkbox；三类计划自动附带确认标志；进度条样式与 aria 语义断言。
+- 限制：进度仅覆盖面板自身检查；浏览器视觉/键盘/窄屏仍未真实验收。
+
+## v0.6.4：检查提速与网络失败区分
+
+- 回归：430 项通过（串行），0 失败。
+- 复用：`RegistryStager.inspectPackage`／`inspectWslCandidate` 对同一「来源｜包｜版本」的只读检查在 10 分钟内复用已验证的公开归档，重复的「检查全部更新」不再重复下载旧包；复用前仍核对 npm 元数据里的 integrity 是否一致，发布内容变了立即失效。
+- Union 公开证明缓存：`UnionGenerationStager` 在同一进程里复用已验证的公开依赖证明，第二次预检查不再重复 26 个请求。
+- 并行：旧、新两个公开原包同时检查；扫描内最多两个只读预检查并行。
+- 网络失败：`fetch failed／ECONNRESET／超时` 在面板上显示为「更新前检查失败，可重试」并附重试提示，不再显示成「暂不支持在线更新」这类策略拒绝；策略拒绝与网络失败的错误码完全分开。
+- 实测：本机 npmmirror 源第二次全量检查从约 50 秒降到约 13 秒；真实 npm 源从约 90 秒降到约 35 秒。
+
+## v0.6.3：失败详情保留与剪贴板兜底
+
+- 回归：426 项通过（串行），0 失败。
+- 失败详情：新增独立的 `failures.json`（最多 10 条、每条诊断 16,000 字、文件 ≤192KB），在批次结束时写入终态失败/未知项；不占 `history.json` 的滚动预算，重启后报告仍带消息、步骤、恢复结果与核验状态。写盘失败只置警告，不改变结果。
+- 报告：新增 `failures` 字段；客户端复制时把当前面板错误（`client.lastError`）并入报告，准备阶段被拒也能带走错误码和消息。
+- 剪贴板兜底：复制失败时报告 JSON 以只读 `<pre>` 展开显示（`pud-report-json`），可选中手动复制，不再出现“请选择可见 JSON”却无可选内容的情况。
+- 脱敏与边界：失败详情同样经过脱敏器；单条大于预算时截断并标记；测试覆盖 5 条写满 3 条的上限、重载、路径/凭据脱敏和文件大小。
+- 限制：浏览器剪贴板与视觉仍未真实验收；失败详情不含浏览器控制台或宿主内部堆栈。
+
+## v0.6.2：可复制的诊断报告
+
+- 回归：425 项通过（串行），0 失败。
+- 报告：`schema: dsh-plugin-update-doctor/report/v1`，包含更新器/DSH/Node/Electron/平台、profile、插件摘要、分类结论与建议、最近操作（阶段、错误码、脱敏诊断、步骤、恢复与装后核验）、重启交接和安装器日志摘录。
+- 脱敏：fixture 注入 profile 路径与 `password=hidden` 的失败记录后，报告保留错误码与消息，但不含原路径或凭据；HTTP `GET ?action=report` 返回同一结构，非法插件名 400。
+- 边界：最多 6 个操作、每项 60 步、诊断 8,000 字、安装器日志 24,000 字、整份 ≤200KB；超长输入带 `<report-truncated>` 标记。
+- UI：工具栏「复制诊断报告」、失败行「复制错误报告」、详情页同名按钮由渲染树测试覆盖。浏览器剪贴板与视觉仍未真实验收。
+- 限制：历史压缩后旧记录可能只剩错误码（报告标 `truncated`）；报告不含浏览器控制台或宿主内部完整堆栈。
+
+## v0.6.1：隔离代际的依赖闭包下载
+
+- 回归：421 项通过（串行），0 失败。
+- 设计：先复用**已核验的安装闭包**，只解析新声明满足不了的范围；缺失包从公开 npm 下载，按 npm 的 owner/嵌套语义放置，不同大版本并列而不是判冲突。下载前只读 admission 为 `download-required`（含闭包摘要与包数），准备阶段才下载并逐个校验发布 SRI，计划与执行用同一摘要绑定。
+- 代际：合并后的目录重新做完整快照；代际 schema 2 的依赖证据逐包绑定公开证明；`_read` 改为逐源核对 `contractDigest`（新记录逐源保存，旧记录继续兼容共享摘要），并保留完整 inventory 校验。
+- 篡改：准备阶段提供被篡改的依赖归档时返回 `dependency-closure-integrity`，profile 仍是旧版本，不产生 stage 或安装动作。
+- 自有 Host 证明（`artifacts/union-closure-0.6.0/host-result.json`，判定 `closure-download-and-recovery-verified`）：真实 npm Union `0.11.0` 为基线；候选 `0.11.1` 是同一公开原包加版本号与一个真实依赖声明（`is-number@^7.0.0`，npm 无此发行版）。scan 为 `download-required`、闭包 1 个包；篡改准备被拒且 profile 未变；注入一次目标安装拒绝后，旧代际恢复 applied、恢复代际运行命名空间 verified；再次准备并提交 updated，package/source/host/runtime 全部 verified，1/1 行 active，新代际里真实的 `advance_fetch` 字段提取与 markdown 均通过。
+- 限制：候选清单是合成的（不是已发布版本）；依赖自身声明安装脚本、原生约束或可选依赖时仍拒绝（真实 cheerio 闭包里存在这类包，因此设计上优先复用已安装副本而不是重新解析整棵树）；解析深度 ≤5、仅稳定版、最多 64 个新包。
+
+## v0.6.0：标准通道只要求公开源＋目标字节＋回滚归档
+
+- 回归：417 项通过（串行），0 失败。
+- 标准通道：普通更新不再预拒绝 peer 图、依赖声明或预设差异。预检只核验公开源、目标归档字节（SRI＋SHA256）和旧版本归档；准备与替换前重验；装后按新清单核验实际解析树（容错记录无法解析的浏览器内置／平台可选依赖）、拒绝原生字节与非法来源，并核验 Host 行。不通过即回滚已暂存原版本。
+- 删除的“审查”闸门：`peer-graph-change`、`dependency-graph-changed`（声明变化）、Better Sidebar `0.32.1 → 0.33.0` 固定原包对、WSL 结构摘要 `e820e82c…` 与 `!!js` 表达式审查、WSL 现代行集合 `MODERN_ROWS`、Union 宿主声明摘要一致要求与 `0.10.24 → 0.10.25` 特例。
+- 保留的拒绝：核心服务接管、安装脚本、原生／共享运行时依赖、宿主运行时依赖、自更新隔离、管理包与只读包、非法 / 私有来源、`.node` 等原生字节。
+- 声明式 `!!js`：普通插件 patch 以自定义 YAML 标签解析为惰性数据（不执行），行 id/name 仍做受保护与同包校验；隔离代际路线仍只接受静态单行声明。
+- 真实原包只读复核：`dsh-better-sidebar` `0.32.1`（SHA256 `cd0a88c0…`，32 个声明依赖）与 `0.33.0`（`90d003cf…`，2 个依赖）均通过通用路径 `RegistryStager.inspectPackage`，行集合仍为 `better-sidebar`；不再依赖版本对登记。`dsh-plugin-wsl-env` `0.29.1` 真实原包通过新 `inspectWslCandidate`，结构摘要仍为 `e820e82c…`。
+- 真实 profile 只读复算：本机已装 4 个 bundle 的容错依赖树核验全部通过——sidebar 0.33.0（2 包 / 252 文件）、doctor 0.5.11（1 / 233）、WSL 0.29.1（0 / 0）、Union 0.11.0（29 / 2289），无未解析项，声明无拒绝原因。
+- 后续：闭包下载与自有 Host 证明已在 0.6.1 接入（见上）；仍缺完整发布到 npm 的版本级端到端证明、浏览器视觉／键盘／窄屏与第二台设备验收。
+- 说明：历史 0.5.9／0.5.11 条目里关于声明审查与固定版本对的描述只代表当时的版本。
+
+## v0.5.11：隔离路线接受“闭包已满足”的依赖范围变化
+
+- 回归：412 项通过（串行）。
+- 判定：`requireIsolatedTransition` 不再要求依赖声明逐字节相等；范围变化时逐个核对已安装副本版本是否满足新范围（`unionRangeMatches`）。满足 → 继续用现有闭包；不满足或出现新依赖 → `dependency-closure-requires-download`。
+- 依据：代际里放的是**已核验的已安装副本**，只要它们满足新根声明，语义上仍然正确；真正需要下载新依赖的情况仍拒绝，等闭包下载器。
+- 未做：从 npm 下载新依赖并组装新闭包（这是这条路线剩余的另一半）。
+
+## v0.5.10：停止任务不再要求第二次勾选
+
+- 回归：411 项通过（串行）。
+- 交互：确认弹窗中「停止当前智能体任务后更新」选项自身即为同意，主按钮写作「确认停止任务并更新」；不再额外渲染停止同意勾选框。
+- 协议：客户端选择停止时向宿主发送 `confirmCancel: true`，服务端 `commitBatch` 仍要求它在 `cancel-active` 下为真，未放宽校验。
+- 真实结果：本机 profile 已通过 0.5.9 路线把 WSL 从 0.29.0 更新到 0.29.1，记录为 `updated`、包核验 verified、宿主 16/16 active。
+
+## v0.5.9：WSL 声明审查拆层
+
+- 回归：411 项通过（串行）。
+- 结构层钉死：插入行 id/名称集合与核心覆盖项（含顺序无关）摘要 `e820e82c…`；改动即 `wsl-structure-changed`。
+- 表达式层：`!!js` 表达式按 sha256 审查，已登记 `75439e47…`（`!ctx.get('profileContext')`）与 `1850a687…`（预设技能目录）；出现未登记表达式即 `wsl-declaration-review-required`，并把摘要带进面板。
+- 内容层：配置数据变化放行，面板用与 0.29.0 基线的差异（changed/added/removed 项 id）说明本次改了什么。
+- 模块来源：预设内只允许 `dsh-plugin-wsl-env`、`@deepseek-ai/*`、`cordis:*`，其余 `wsl-foreign-preset-module`。
+- 实测对照：0.29.0 与 0.29.1 结构摘要一致；0.29.1 新增的 `tool-office` 属官方包、布尔值属数据，唯一新增表达式已审查 → 0.29.1 进入可更新状态。
+- 未验证：真实 profile 上完成 0.29.1 更新；浏览器渲染。
+
+## v0.5.8：重启式更新交接与渲染树检查
+
+- 回归：411 项通过（串行）。
+- 自有 Host 三段式证明（`artifacts/restart-handoff/`）：prepare 安装 0.10.25 → update 在管理器边界注入真实删除后的 `restart-required` → 目标 0.11.0 写盘并记录待核验（`success-update-result.json`）→ 新进程核验字节、宿主条目与精确运行命名空间，判定 applied（`success-resume-result.json`）。
+- 回滚证明：同一流程中破坏目标入口文件，新进程核验失败 → 回滚 0.10.25、字节核验通过（`rollback-resume-result.json`）。
+- 未复现：干净自有 profile 中同一更新就地 applied（`update-result.json`，verdict `not-reproduced`），说明真实 profile 的 `unmanaged-plugin` 触发条件仍未确定。
+- 渲染树：`tests/ui-render.test.mjs` 执行真实面板函数，断言主流程只含列表/进度/结果/诊断入口、诊断默认折叠、行内短状态先于证据、重启提示。仍非浏览器、CSS、窄屏或键盘验收。
+
+## v0.5.7：不可热卸载回滚与面板简化
+
+- 回归：400 项通过（串行 `--test-concurrency=1`）。
+- 回滚：官方删除返回 `restart-required` + `changed: true` 时，路线只出现 `remove → install(旧归档)`，目标代际从未安装，安装字节核验通过；字节核验失败或回执缺失保持 `unknown`，不声明恢复。
+- 面板：主流程不再直接陈列证据区块，行内先给一句短状态，确认弹窗不再有通用勾选；三类特殊确认（来源改变、公共镜像、派生代际）与停止任务确认保留。以上为结构断言。
+- 未验证：真实 profile 中同一次“删除后回滚”的实跑；面板简化后的浏览器视觉与键盘操作。
+
+## v0.5.6：依赖隔离结构化准入与官方常规更新对照
+
+- 先在原版 DSH Desktop 0.2.2-rc.5 的隔离配置中直接使用**官方常规更新**（未装本更新器）：版本列表提供 `0.11.0`、包命令退出 0，但同进程加载报 `TypeError: Cannot read properties of undefined (reading 'Element')`；官方自动恢复旧版也以同一导入错误失败。两版 `lib/index.js` SHA256 相同，说明问题不在根包字节或版本兼容声明。**全新进程首次安装 `0.11.0` 时官方 applied、1/1 active 且 `advance_fetch` 功能通过**，把可观察范围收窄到同进程替换。原始记录见本地产物 `artifacts/union-stock-update-0110/`，不随安装包发布。
+- 同一隔离环境改用生产 `DoctorService`／`UnionGenerationStager`／参照真实 Loader 的命名空间校验器：`0.10.25 → 0.11.0` 的结构化预检与更新通过，官方 applied、安装字节一致、Host 1/1 active，且 Loader 实际运行新代际模块；本地回环 HTML 上的 `advance_fetch` 字段提取与 Markdown 通过。随后注入一次目标安装拒绝：目标记为失败，旧代恢复 applied 并通过字节与实际运行核验。两轮都没有版本白名单参与。
+- 实验中使用了公开 npm 原包、真实包命令与真实官方管理器；两版根包与每个依赖副本均与公开归档比对。注入拒绝发生在管理器边界，不是公开缺陷；依赖闭包证据来自自有隔离配置，**不是用户实际安装、真实搜索引擎、浏览器渲染或第二台设备验收**。
+- 回归覆盖：结构化路线选择（后续正式版无需新增名单、降级/预发布拒绝）、宿主声明变化与依赖声明变化拒绝、动态声明拒绝、不相关包拒绝、代际参考记录防伪、旧 schema 读取、完成条件必须包含实际运行命名空间。未修改真实 profile、宿主内核或全局源。
+
+## v0.5.5：普通插件预检与 Better Sidebar
+
+- 两个公开 Better Sidebar 原包均通过真实 npmmirror 的只读预检及官方 npm 逐字节摘要比对。`0.32.1` SHA256 `cd0a88c0da237622a83d465ed824f17c39c74e7edf2609c14cf21c813d70c517`；`0.33.0` SHA256 `90d003cfc2c411295faef5ae7e3b1585c1473bbd059887b16308f364a96ab5d6`。
+- 原版 DSH Desktop 0.2.2-rc.5 使用自有临时 profile：侧边栏从 npm 规格 `0.32.1 → 0.33.0`，正式更新流程验证文件、保留的 Host 依赖、npm 来源及 1/1 active 行；官方版本检查仍可用。另一轮在目标安装入口故意返回拒绝，真实官方流程恢复 `0.32.1`，不把恢复写成更新成功。每次仅一次交接。
+- 隔离实验使用实际公开侧边栏包、生产预检与 HTTP 处理代码、原版管理器和真实包命令；根包安装传输走自有 loopback 适配器，预检镜像跳转是夹具。故意拒绝不是新版加载故障。没有真实用户点击、浏览器渲染、在途模型任务或两台设备验收；真实镜像只读验证不是镜像安装全过程证明。
+- 回归覆盖精确单跳及跨域／二跳拒绝、SRI／官方摘要、版本发现与预检失败分开、同源确认、选定包复查、任意依赖变化拒绝，以及侧边栏固定原包与依赖变化、原生加速包拒绝。未修改真实 profile、宿主内核或全局源。
+
 ## 2026-11-24：公开npm、自身升级与默认公共fallback修复
 
 - 用户公开发布0.5.3：48文件、201,051字节、SHA256 `a05a5594af5d440e8ef3ac286f3efed8cad22dd116a03423352d1d08512887f6`。该包区别于下方旧本地47文件归档，未覆盖旧归档。

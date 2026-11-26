@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+const releaseHeading = "'v" + JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')).version + "'";
 import vm from 'node:vm';
 
 // Static Client source and pure predicate checks only. These do not emulate
@@ -40,13 +41,14 @@ test('restore confirmation has distinct semantics while retaining expiry, cancel
     const dialog = section('    function ConfirmDialog(', '    class PanelBoundary');
     assert(dialog.includes("t(restoring ? 'confirmRestoreTitle' : 'confirmTitle')"));
     assert(dialog.includes("t(restoring ? 'confirmRestoreImpact' : 'confirmImpact')"));
-    assert(dialog.includes("t(restoring ? 'acknowledgeRestore' : 'acknowledge')"));
+    assert(!dialog.includes('setAck(') && !dialog.includes("'acknowledge'"), 'the ordinary confirmation carries no generic review checkbox');
     assert(dialog.includes("'confirmRestoreStop' : 'confirmRestoreWait'"));
     assert(dialog.includes("useState('wait-for-idle')"));
     assert(dialog.includes('cancel.current?.focus()'));
     assert(dialog.includes('now >= Date.parse(plan.expiresAt)'));
-    assert(dialog.includes("taskPolicy === 'cancel-active' && !confirmCancel"));
-    assert(dialog.includes("t('stopConsent')"));
+    assert(!dialog.includes("'data-testid': 'pud-confirm-cancel'"), 'no separate stop checkbox');
+    assert(dialog.includes("t('stopPolicyHelp')"), 'the stop option states its impact inline');
+    assert(dialog.includes("{ confirmCancel: true }"), 'the chosen stop option is the consent the Host receives');
     assert(dialog.includes('valueOf(item.from,') && !dialog.includes('item.from ?? item.version'));
 });
 
@@ -78,19 +80,19 @@ test('GitHub self confirmation shows complete pins, sends offered commit only an
     assert(commitDetails.includes("'pud-github-commits'")); assert(commitDetails.includes('value.fromCommit ?? value.currentCommit')); assert(commitDetails.includes('value.toCommit ?? value.latestCommit')); assert(!commitDetails.includes('slice('));
     const dialog = section('    function ConfirmDialog(', '    class PanelBoundary');
     assert(dialog.includes('h(CommitDetails, { value: item, t })'));
-    assert(dialog.includes("'data-testid': 'pud-github-safety'")); assert(dialog.includes("t('githubConfirmSafety')")); assert(dialog.includes("githubUpdating ? t('acknowledgeGithubSelf')"));
+    assert(dialog.includes("'data-testid': 'pud-github-safety'")); assert(dialog.includes("t('githubConfirmSafety')")); assert(!dialog.includes('acknowledgeGithubSelf'));
     assert(code.includes("verification.source.expectedKind === 'registry' || verification.source.kind === 'registry' ? 'registryCheck' : 'sourceCheck'")); assert(code.includes('h(CommitDetails, { value: selfState.attempt, t })'));
     assert(code.includes('GitHub main HEAD · not a release')); assert(code.includes('GitHub 主分支 HEAD · 非 Release'));
     assert(code.includes("useLocale(selectLocale)")); assert(code.includes("useClientSync(selectClientSync)"));
 });
 
-test('source refusal labels, bounded progress and v0.5.4 retain Host theme presentation', () => {
+test('source refusal labels, bounded progress and the current release heading retain Host theme presentation', () => {
     for (const reason of ['registry-origin-unsupported', 'registry-origin-unverified', 'source-identity-unverified', 'recovery-source-changed', 'recovery-archive-unavailable', 'state-changed']) assert(code.includes(`'reason.${reason}'`));
     for (const status of ['restored', 'recovery-required']) assert(code.includes(`'status.${status}'`));
     assert(code.includes('const installProgress = operation?.installProgress'));
     assert(code.includes('const logChunks = boundedLogs('));
     assert(code.includes('raw.length > 24000'));
-    assert(code.includes("'v0.5.4'"));
+    assert(code.includes(releaseHeading));
     assert(code.includes('new formal steps wait'));
     assert(code.includes('不冻结智能体创建、提示／工具组装、维护操作'));
     assert(code.includes('--dsw-alias-label-primary-foreground'));

@@ -17,6 +17,16 @@ window.__ModuleLoader__.load({
       selectAll: 'Select all available', clearSelection: 'Clear selection', selectedCount: 'Selected', availableCount: 'Available', updateSelected: 'Update selected',
       notChecked: 'Not checked', empty: 'No installed profile plugins were returned.', noAvailable: 'No safely offered compatible stable updates were found.', uncheckedHint: 'Run the version check before selecting updates.',
       'status.not-checked': 'Not checked', 'status.up-to-date': 'Up to date', 'status.available': 'Update available', 'status.blocked': 'Blocked', 'status.error': 'Check failed',
+      'quick.not-checked': 'Not checked', 'quick.check-failed': 'Version check failed', 'quick.available': 'Update available', 'quick.up-to-date': 'Up to date',
+      'quick.needs-restart': 'Needs a DSH restart', 'quick.local-source': 'Local install', 'quick.no-compatible': 'No compatible release',
+      'quick.preflight-failed': 'Update pre-check failed; retry', preflightRetryHint: 'The read-only pre-check hit a network error, so this row is not a policy refusal. Click Check all updates to retry.',
+      hostDependenciesBadge: '⚠ Host-package dependency', hostDependenciesWarning: 'This package declares Host packages as ordinary dependencies ({list}); the package manager may place them at the profile root and the Host may disable the matching core row. The update is still attempted.',
+      'quick.unavailable': 'Not updatable here', 'quick.recovery-required': 'Recovery available',
+      rowDetails: 'Details', diagnostics: 'Diagnostics and history',
+      copyReport: 'Copy error report', copyReportAll: 'Copy diagnostics report', reportCopied: 'Diagnostic report copied to the clipboard', reportFailed: 'Could not copy automatically. Select the JSON below and copy it manually.', showReport: 'Report JSON (select and copy)', reportHint: 'Paste this JSON with your feedback; it contains versions, error codes and sanitized messages, not your files.',
+      'reason.wsl-declaration-review-required': 'The new version adds a declaration expression that has not been reviewed.', 'reason.wsl-structure-changed': 'The new version changes the rows or core overrides this plugin declares.', 'reason.wsl-foreign-preset-module': 'The new version loads a module outside this plugin or the shipped DSH packages.',
+      restartPending: 'Waiting for the next DSH start to finish this update', restartApplied: 'Finished after the restart', restartRolledBack: 'Rolled back after the restart', restartUnknown: 'The restart verification could not be confirmed', diagnosticNote: 'Troubleshooting evidence only; sanitized and never uploaded.',
+      restartRollback: 'This profile cannot replace the plugin while DSH runs. The previous version was restored; update it after a DSH restart or with the official plugin manager.',
       'status.waiting': 'Waiting', 'status.preparing': 'Preparing', 'status.updating': 'Updating', 'status.updated': 'Updated', 'status.failed': 'Failed', 'status.skipped': 'Skipped', 'status.restart-required': 'Host restart required', 'status.unknown': 'Unknown',
       'state.active': 'Host rows active', 'state.inactive': 'Inactive', 'state.partial': 'Partially active', 'state.missing': 'Package unavailable', 'state.unknown': 'Unknown',
       'source.registry': 'Registry', 'source.git': 'Git', 'source.local': 'Local / linked', 'source.other': 'Other / protected',
@@ -25,7 +35,7 @@ window.__ModuleLoader__.load({
       'reason.recorded-recovery-only': 'Only a previously recorded failed update has a recovery target.', 'reason.host-dependency': 'Shared Host dependency changes require a Host restart.', 'reason.restart-required': 'The Host cannot replace this target online.',
       'reason.incompatible-version': 'The published target is incompatible with this DSH version.', 'reason.no-compatible-stable-version': 'No newer compatible stable version was offered.', 'reason.wsl-online-not-supported': 'WSL environment hot replacement is not supported by this first version.',
       noValue: 'Not available', unknown: 'Unknown', lastChecked: 'Last version check', taskPolicy: 'Task policy', batchLimit: 'Up to 20 targets can be confirmed in one batch. More updates can be selected after the current batch finishes.', selectFirstBatch: 'Select first 20 available', activeTasks: 'Current running Agent tasks',
-      'reason.online-update-gate-unavailable': 'The required safe-task gate or staging support is unavailable; no updates are allowed.', 'reason.host-runtime-dependencies': 'This target can replace Host runtime dependencies and is blocked.', 'reason.native-or-shared-runtime': 'Native or shared runtime dependencies cannot be safely replaced by this online updater.', 'reason.core-service-takeover': 'This target takes over core services and is blocked under the conservative online policy.', 'reason.package-version-unverified': 'The installed package identity or version could not be verified.', 'reason.version-query-failed': 'Published versions could not be queried.',
+      'reason.online-update-gate-unavailable': 'The required safe-task gate or staging support is unavailable; no updates are allowed.', 'reason.host-runtime-dependencies': 'This target can replace Host runtime dependencies and is blocked.', 'reason.native-or-shared-runtime': 'Native or shared runtime dependencies cannot be safely replaced by this online updater.', 'reason.native-payload-not-hot-replaceable': 'This plugin loads native binaries; the Host keeps them locked, so neither the update nor a rollback can replace them. Update it with the official manager.', 'reason.core-service-takeover': 'The new version changes how a core Host service (HMR, storage, subprocess, session, ...) is wired compared with the installed version; that capability change needs the official manager.', 'reason.package-version-unverified': 'The installed package identity or version could not be verified.', 'reason.version-query-failed': 'Published versions could not be queried.',
       waiting: 'Waiting for current tasks to finish naturally', waitingDetail: 'Current tasks continue without cancellation. The Host waits until all active Agent tasks naturally finish, then defers new requests/steps while replacing eligible managed plugins.',
       staging: 'Preparing target files', stagingDetail: 'Target and previous package files are being downloaded and checked before any installed plugin is stopped. Current tasks continue; the batch will then wait for them to finish naturally.',
       running: 'Updating selected plugins', runningDetail: 'Updates run one at a time. This panel never force-cancels tasks or restarts DSH. If an update fails, later targets may be skipped to protect shared services.',
@@ -63,6 +73,16 @@ window.__ModuleLoader__.load({
       selectAll: '全选可更新项', clearSelection: '取消全选', selectedCount: '已选择', availableCount: '可更新', updateSelected: '一键更新所选',
       notChecked: '尚未检查', empty: '未返回已安装的配置插件。', noAvailable: '未找到可安全提供的兼容正式版更新。', uncheckedHint: '请先检查更新，再选择插件。',
       'status.not-checked': '尚未检查', 'status.up-to-date': '已是最新', 'status.available': '可更新', 'status.blocked': '已阻止', 'status.error': '检查失败',
+      'quick.not-checked': '尚未检查', 'quick.check-failed': '版本检查失败', 'quick.available': '可更新', 'quick.up-to-date': '已是最新',
+      'quick.needs-restart': '需重启 DSH 后更新', 'quick.local-source': '本地安装', 'quick.no-compatible': '无兼容正式版',
+      'quick.preflight-failed': '更新前检查失败，可重试', preflightRetryHint: '只读预检查遇到网络错误，不是策略拒绝；点「检查全部更新」即会重试。',
+      hostDependenciesBadge: '⚠ 宿主包依赖', hostDependenciesWarning: '该插件把宿主包（{list}）声明成普通依赖：包管理器可能把它安装到 profile 根部，宿主可能因此停用对应的核心行。更新仍会照常尝试。',
+      'quick.unavailable': '暂不支持在线更新', 'quick.recovery-required': '可恢复旧版',
+      rowDetails: '详情', diagnostics: '诊断与历史记录',
+      copyReport: '复制错误报告', copyReportAll: '复制诊断报告', reportCopied: '诊断报告已复制到剪贴板', reportFailed: '无法自动复制，请选中下面的 JSON 手动复制。', showReport: '报告 JSON（可选中复制）', reportHint: '反馈时请附上这段 JSON；它包含版本、错误码和脱敏消息，不包含你的文件。',
+      'reason.wsl-declaration-review-required': '新版本新增了尚未审查的声明表达式。', 'reason.wsl-structure-changed': '新版本改动了这个插件声明的行或核心覆盖项。', 'reason.wsl-foreign-preset-module': '新版本加载了本插件和 DSH 自带包以外的模块。',
+      restartPending: '等待下次启动 DSH 完成更新', restartApplied: '重启后已完成', restartRolledBack: '重启后已回滚原版本', restartUnknown: '重启后核验未能确定', diagnosticNote: '仅供排障的技术证据，已脱敏且不会上传。',
+      restartRollback: '这个配置范围无法在 DSH 运行时替换该插件。已恢复原版本；请在重启 DSH 后或用官方插件管理器更新。',
       'status.waiting': '等待中', 'status.preparing': '准备中', 'status.updating': '更新中', 'status.updated': '已更新', 'status.failed': '失败', 'status.skipped': '已跳过', 'status.restart-required': '需重启宿主', 'status.unknown': '未知',
       'state.active': '宿主条目活跃', 'state.inactive': '未活跃', 'state.partial': '部分活跃', 'state.missing': '包不可用', 'state.unknown': '未知',
       'source.registry': '安装源', 'source.git': 'Git', 'source.local': '本地 / 链接', 'source.other': '其他 / 受保护',
@@ -71,7 +91,7 @@ window.__ModuleLoader__.load({
       'reason.recorded-recovery-only': '只有此前记录的失败更新可提供恢复目标。', 'reason.host-dependency': '共享宿主依赖变化需要重启宿主。', 'reason.restart-required': '宿主不能在线替换此目标。',
       'reason.incompatible-version': '发布目标与当前 DSH 不兼容。', 'reason.no-compatible-stable-version': '未提供更高的兼容正式版本。', 'reason.wsl-online-not-supported': '第一版不支持 WSL 执行环境热替换。',
       noValue: '未提供', unknown: '未知', lastChecked: '上次版本检查', taskPolicy: '任务政策', batchLimit: '每批最多确认 20 个目标；本批结束后可继续选择其余更新。', selectFirstBatch: '选择前 20 个可更新项', activeTasks: '当前运行中的智能体任务',
-      'reason.online-update-gate-unavailable': '安全任务门禁或预备安装支持不可用，禁止执行更新。', 'reason.host-runtime-dependencies': '此目标可能替换宿主运行时依赖，已阻止。', 'reason.native-or-shared-runtime': '原生或共享运行时依赖不能由此在线更新器安全替换。', 'reason.core-service-takeover': '此目标接管核心服务，按保守在线政策阻止。', 'reason.package-version-unverified': '无法核验已安装包的身份或版本。', 'reason.version-query-failed': '无法查询发布版本。',
+      'reason.online-update-gate-unavailable': '安全任务门禁或预备安装支持不可用，禁止执行更新。', 'reason.host-runtime-dependencies': '此目标可能替换宿主运行时依赖，已阻止。', 'reason.native-or-shared-runtime': '原生或共享运行时依赖不能由此在线更新器安全替换。', 'reason.native-payload-not-hot-replaceable': '该插件加载了原生二进制，宿主占用期间既不能替换也不能回滚，请用官方管理器更新。', 'reason.core-service-takeover': '新版本相对已安装版本改动了宿主核心服务（HMR、存储、子进程、会话等）的接线方式，该能力变化请用官方管理器更新。', 'reason.package-version-unverified': '无法核验已安装包的身份或版本。', 'reason.version-query-failed': '无法查询发布版本。',
       waiting: '等待当前任务自然结束', waitingDetail: '当前任务继续，不会被取消。宿主等待所有活动智能体任务自然结束后，在替换符合条件的受管插件期间暂缓新请求和步骤。',
       staging: '正在准备目标文件', stagingDetail: '停止已安装插件之前，先下载并校验目标及旧版文件。当前任务继续；准备完成后批次等待任务自然结束。',
       running: '正在更新所选插件', runningDetail: '逐个更新，不强制取消任务、不重启 DSH。某项失败时可能跳过后续目标，保护共享服务。',
@@ -100,8 +120,28 @@ window.__ModuleLoader__.load({
       requestFailed: '请求未完成。', transportFailed: '无法连接宿主或未返回有效结果，不能据此推断更新结果。', timeout: '读取超过时限，请重试检查；这不代表更新失败。',
       stale: '准备时的版本已变化或确认已过期，请刷新后重新核对。', renderFailed: '更新面板未能渲染，请刷新页面；不会自动重试任何操作。', persistence: '记录保存警告', limitations: '检查限制与安全边界',
     };
-    Object.assign(EN, { 'reason.dependency-graph-update-requires-separate-review':'This plugin has dependencies requiring separate review before online replacement.', 'reason.core-service-takeover':'This plugin takes over a core service; live replacement is unverified.', progressUnknown:'Progress is unknown', progressUnknownDetail:'The last observation is retained; check current state rather than assuming the operation is still running.' });
-    Object.assign(ZH, { 'reason.dependency-graph-update-requires-separate-review':'此插件包含依赖图，需单独审查后才能在线替换。', 'reason.core-service-takeover':'此插件接管核心服务，在线替换尚未验证。', progressUnknown:'进展未知', progressUnknownDetail:'保留最后观察结果，请重新核对当前状态，不能据此认定仍在执行。' });
+    Object.assign(EN, {
+      scanProgressLabel: 'Checking {name} ({done}/{total})',
+      'scan.phase.versions': 'Querying published versions…',
+      'scan.phase.preflight': 'Verifying update packages',
+      'scan.phase.complete': 'Check complete',
+    },
+    { 'reason.preflight-network-failed': 'The read-only pre-check hit a network error before any policy decision; retry the check.', 'reason.dependency-graph-update-requires-separate-review':'This plugin has dependencies requiring separate review before online replacement.', 'reason.core-service-takeover':'The new version rewires a core Host service compared with the installed version; use the official manager for that change.', progressUnknown:'Progress is unknown', progressUnknownDetail:'The last observation is retained; check current state rather than assuming the operation is still running.' });
+    Object.assign(ZH, {
+      scanProgressLabel: '正在检查 {name}（{done}/{total}）',
+      'scan.phase.versions': '正在查询发布版本…',
+      'scan.phase.preflight': '正在核对更新包',
+      'scan.phase.complete': '检查完成',
+    },
+    { 'reason.preflight-network-failed': '只读预检查在作出任何判定前遇到网络错误，请重新检查。', 'reason.dependency-graph-update-requires-separate-review':'此插件包含依赖图，需单独审查后才能在线替换。', 'reason.core-service-takeover':'新版本相对已安装版本改动了宿主核心服务接线，请用官方管理器更新。', progressUnknown:'进展未知', progressUnknownDetail:'保留最后观察结果，请重新核对当前状态，不能据此认定仍在执行。' });
+    Object.assign(EN, {
+      dependencyClosurePlanned: 'This update must first download {packages} dependency package(s) from public npm, then prepare the generation.',
+      dependencyClosureHint: 'Downloads {packages} dependency package(s) ({size}) from public npm, verifies each archive, and embeds them in the new generation.',
+    });
+    Object.assign(ZH, {
+      dependencyClosurePlanned: '此更新需要先从公共 npm 下载 {packages} 个依赖包，之后才能准备代际。',
+      dependencyClosureHint: '会从公共 npm 下载 {packages} 个依赖包（{size}），逐个校验归档后放进新的代际。',
+    });
     Object.assign(EN, {
       intro: 'Check available updates for installed plugins, select compatible releases, and review each result without closing DSH.',
       noAvailable: 'No selectable updates are currently available. Review each version and source requirement below.',
@@ -117,7 +157,7 @@ window.__ModuleLoader__.load({
       highImpact: 'High-impact plugin: replacement may temporarily stop shared execution or file services. This is a warning, not proof that live replacement has been verified.',
       diagnosis: 'Details / failure details', 'reason.self-update-blocked': 'The running updater needs an independent update path; it cannot replace itself.',
       'reason.management-or-shipped-bundle': 'This component is managed with the Host version or requires independent updating.',
-      'reason.core-service-takeover': 'High-impact shared/core service: review runtime and task effects before updating.',
+      'reason.core-service-takeover': 'The update changes core Host service wiring compared with the installed version.',
       'reason.wsl-online-not-supported': 'WSL updates use the verified generation path; unsupported future versions require another verification.',
       runningDetail: 'Updates run sequentially using your confirmed task policy. DSH is not automatically restarted. Failure or restart-required stops later targets and retains exact recovery results.',
       'step.stopping-current-tasks': 'Stopping current Agent tasks with your explicit approval', 'step.cancelling-active': 'Requesting cancellation of current Agent tasks',
@@ -138,7 +178,7 @@ window.__ModuleLoader__.load({
       highImpact: '高影响插件：替换期间可能停止共享执行或文件服务。该警告不代表已验证其无间断热替换。',
       diagnosis: '详情／故障详情', 'reason.self-update-blocked': '运行中的更新器需要独立更新，不能替换自身。',
       'reason.management-or-shipped-bundle': '此组件需随宿主版本管理或独立更新。',
-      'reason.core-service-takeover': '高影响共享／核心服务，更新前需核对运行状态及任务影响。',
+      'reason.core-service-takeover': '该更新改动了宿主核心服务接线（与已安装版本不同）。',
       'reason.wsl-online-not-supported': 'WSL 使用已验证的代际路径更新；未验证的未来版本需另行检查。',
       runningDetail: '按你确认的任务政策逐项更新，不自动重启 DSH。失败或需重启时暂停后续目标，保留实际恢复结果。',
       'step.stopping-current-tasks': '按你明确同意的政策停止当前智能体任务', 'step.cancelling-active': '正在请求停止当前智能体任务',
@@ -305,11 +345,21 @@ window.__ModuleLoader__.load({
       'reason.registry-handoff-unavailable':'The public Host exact-version registry update path is unavailable.',
       'reason.dependency-runtime-reload-unverified':'Safe no-restart updating is not supported on this stock Host path. This updater blocks the risk; it does not fix Host reload or automatically restart DSH.',
       'reason.identity-store-unverified':'Installation/recovery records cannot be verified. Stop management attempts and inspect the official manager; do not overwrite the records.',
-      unionGenerationSafety:'Union uses a reviewed complete-dependency generation archive while DSH stays open. The original code is preserved, but installation becomes a Doctor-owned local archive, not an npm installation; built-in Versions eligibility is not preserved. The plugin temporarily unloads and recovery may fail. Only reviewed exact versions are supported.',
+      unionGenerationSafety:'This plugin cannot be reloaded in the running Host because its dependency closure is reused. The updater installs a verified complete-dependency generation under a fresh path while DSH stays open. The original code is preserved, but installation becomes a Doctor-owned local archive, not an npm installation; built-in Versions eligibility is not preserved. The plugin temporarily unloads and recovery may fail.',
       acknowledgeUnionGeneration:'I accept the derived local generation source, temporary plugin unload, and separately verified recovery risk.',
-      'reason.union-version-not-reviewed':'This Union version pair has no reviewed complete-dependency generation path.',
-      'reason.union-generation-outcome-unknown':'The Union generation update or recovery has no verified final outcome; do not resend it.',
-      'reason.union-generation-confirmation-required':'The derived local Union generation source requires an additional acknowledgement.',
+      'reason.union-version-unsupported':'This target is not a newer stable source/destination this route can inspect.',
+      'reason.union-host-contract-changed':'The built generation does not match the inspected declaration. Prepare again.',
+      'reason.union-declaration-changed':'The generated dependency declaration no longer matches the inspected package. Prepare again.',
+      'reason.union-package-contract':'The archive does not declare the single static ESM entry this route requires.',
+      'reason.union-source-identity':'The public archive identity or version does not match the requested package.',
+      'reason.union-canonical-source-required':'Only a verified public original archive can be prepared.',
+      'reason.union-current-version-mismatch':'The installed generation does not match its recorded version.',
+      'reason.union-current-dependency-changed':'The installed dependency closure changed since it was recorded.',
+      'reason.union-public-exact-inventory':'An installed dependency copy differs from its public archive bytes.',
+      'reason.union-dependency-unresolved':'A declared dependency could not be resolved to an inspected copy.',
+      'reason.union-retention-limit':'The retained old-generation limit was reached; nothing was silently deleted.',
+      'reason.union-generation-outcome-unknown':'The generation update or recovery has no verified final outcome; do not resend it.',
+      'reason.union-generation-confirmation-required':'The derived local generation source requires an additional acknowledgement.',
       unionSourceVerification:'Derived local dependency generation source', 'unionSource.verified':'Local generation source verified; built-in Versions not preserved', 'unionSource.failed':'Local generation source not verified', 'unionSource.unknown':'Local generation source unknown',
       unionRuntimeVerification:'Exact running dependency generation', 'runtime.verified':'Generation verified', 'runtime.unknown':'Running generation unverified', 'runtime.disabled':'Disabled; generation code not executed',
       unionGenerationSource:'Doctor-owned local dependency generation · original npm bytes verified',
@@ -342,11 +392,21 @@ window.__ModuleLoader__.load({
       'reason.registry-handoff-unavailable':'宿主公开的按精确版本 npm 更新路径不可用。',
       'reason.dependency-runtime-reload-unverified':'当前原版宿主的这条路径不支持安全无重启更新。本更新器只拦截风险，不修复宿主热加载，也不会自动重启 DSH。',
       'reason.identity-store-unverified':'安装／恢复记录无法核验，已停止管理操作；请核对官方管理器，不要覆盖未知记录。',
-      unionGenerationSafety:'Union 使用已审查的完整依赖代际归档，在 DSH 保持打开时替换。原始代码不改，但安装来源会变为更新器管理的本地归档，不再是 npm 安装，宿主内置 Versions 资格不保留。插件会短暂卸载，恢复也可能失败；只支持已审查的精确版本。',
+      unionGenerationSafety:'此插件在运行中的宿主里卸载再安装会复用旧依赖的加载状态，因此不能直接热替换。更新器会在 DSH 保持打开时，把已核验的完整依赖放进全新路径安装。原始代码不改，但安装来源会变为更新器管理的本地归档，不再是 npm 安装，宿主内置 Versions 资格不保留。插件会短暂卸载，恢复也可能失败。',
       acknowledgeUnionGeneration:'我接受完整依赖代际的本地归档来源、插件短暂卸载，以及分别核验的恢复风险。',
-      'reason.union-version-not-reviewed':'此 Union 版本组合尚未获得完整依赖代际更新准入。',
-      'reason.union-generation-outcome-unknown':'Union 代际更新或恢复没有已核验的最终结果，请勿重发。',
-      'reason.union-generation-confirmation-required':'Union 完整依赖代际的本地来源需要额外确认。',
+      'reason.union-version-unsupported':'该目标不是此路线可检查的更高正式版本。',
+      'reason.union-host-contract-changed':'生成的代际与已检查声明不一致，请重新准备。',
+      'reason.union-declaration-changed':'生成的依赖声明与已检查的包不一致，请重新准备。',
+      'reason.union-package-contract':'原包不符合此路线要求的单一静态 ESM 入口声明。',
+      'reason.union-source-identity':'公开原包身份或版本与请求的包不一致。',
+      'reason.union-canonical-source-required':'只能准备已核验的公开原包。',
+      'reason.union-current-version-mismatch':'当前已装代际与记录的版本不一致。',
+      'reason.union-current-dependency-changed':'当前已装依赖闭包与记录不一致。',
+      'reason.union-public-exact-inventory':'某个已装依赖副本与公开原包字节不一致。',
+      'reason.union-dependency-unresolved':'声明的依赖无法解析到可检查的副本。',
+      'reason.union-retention-limit':'保留的旧代已达上限；没有静默删除任何旧资源。',
+      'reason.union-generation-outcome-unknown':'代际更新或恢复没有已核验的最终结果，请勿重发。',
+      'reason.union-generation-confirmation-required':'完整依赖代际的本地来源需要额外确认。',
       unionSourceVerification:'完整依赖代际的本地来源核验', 'unionSource.verified':'本地代际来源已核验；内置 Versions 资格不保留', 'unionSource.failed':'本地代际来源未核验', 'unionSource.unknown':'本地代际来源未知',
       unionRuntimeVerification:'实际运行的完整依赖代际', 'runtime.verified':'已核验运行代际', 'runtime.unknown':'运行代际未核验', 'runtime.disabled':'已停用；未执行代际代码',
       unionGenerationSource:'更新器本地依赖代际 · 已核验原始 npm 字节',
@@ -398,12 +458,12 @@ window.__ModuleLoader__.load({
       mirrorFallbackConfigured: 'Host fallback observed as configured', mirrorFallbackNotConfigured: 'No Host fallback observed at preparation', mirrorFallbackUnknown: 'Host fallback configuration was not verified',
       archiveSourceIdentity: 'Local archive · verified npm provenance',
       'info.public-mirror-may-lag': 'The public mirror may lag behind official npm; this version result applies to the mirror only.',
-      'reason.dependency-graph-changed': 'The dependency declarations or installed graph changed. Recheck and review the dependency update separately before replacement.',
+      'reason.dependency-graph-changed': 'The installed dependency tree changed after the read-only check. Recheck the current state before replacing.',
       'reason.dependency-source-unsupported': 'A dependency uses an unreviewed source or Host/runtime package. Use an independently reviewed installation path.',
       'reason.dependency-not-resolved': 'An installed dependency could not be located for read-only verification. Inspect the package state in the official manager before retrying.',
       'reason.dependency-graph-limit': 'The dependency graph exceeded the bounded verification budget. This is not proof of corruption; it requires separate review.',
       'reason.dependency-path-unsupported': 'A dependency contains an unsupported linked or unsafe path. Its graph cannot be verified by this update path.',
-      'reason.dependency-graph-update-requires-separate-review': 'This dependency layout or change has not been admitted. It requires separate review; merely having dependencies is not an incompatibility finding.',
+      'reason.dependency-graph-update-requires-separate-review': 'A resolved dependency declares an unsupported layout (alternate source, install scripts or an unstable version).',
       'reason.migration-not-admitted': 'Migration requires an identified earlier ordinary Doctor archive with no unresolved operation. Other sources must be reviewed in the official manager.',
       'reason.migration-state-changed': 'The archive installation changed during migration preparation. Refresh and review the same-version migration again.',
       'reason.migration-outcome-unknown': 'The migration has no verified final result. Inspect installed state and the official manager; do not automatically repeat it.'
@@ -414,15 +474,61 @@ window.__ModuleLoader__.load({
       mirrorFallbackConfigured: '准备时观察到宿主已配置备用来源', mirrorFallbackNotConfigured: '准备时未观察到宿主备用来源', mirrorFallbackUnknown: '宿主备用来源配置未核验',
       archiveSourceIdentity: '本地归档 · 已核验 npm 出处',
       'info.public-mirror-may-lag': '公共镜像可能落后于官方 npm；此版本结果仅针对镜像来源。',
-      'reason.dependency-graph-changed': '依赖声明或实际依赖图发生变化，请重新检查，并单独审查依赖更新后再替换。',
+      'reason.dependency-graph-changed': '只读检查后实际依赖树发生变化，请重新核对当前状态再替换。',
       'reason.dependency-source-unsupported': '依赖使用了未审查来源或宿主／运行时包，需要独立审查的安装路径。',
       'reason.dependency-not-resolved': '无法定位某项已安装依赖进行只读核验，请先通过官方管理器核对包状态再重试。',
       'reason.dependency-graph-limit': '依赖图超过有界核验预算；这不证明包损坏，需要单独审查。',
       'reason.dependency-path-unsupported': '依赖包含不支持的链接或不安全路径，当前更新路径无法核验该依赖图。',
-      'reason.dependency-graph-update-requires-separate-review': '此依赖布局或变化尚未准入，需单独审查；仅有依赖不代表插件不兼容。',
+      'reason.dependency-graph-update-requires-separate-review': '已解析的依赖声明了不支持的布局（替代来源、安装脚本或非稳定版本）。',
       'reason.migration-not-admitted': '迁移仅接受已识别的旧普通更新器归档且无未解决操作，其它来源需通过官方管理器核对。',
       'reason.migration-state-changed': '准备迁移期间归档安装已变化，请刷新并重新核对同版本来源迁移。',
       'reason.migration-outcome-unknown': '来源迁移没有已核验的最终结果，请核对实际安装和官方管理器，不要自动重复操作。'
+    });
+    Object.assign(EN, {
+      'update.available': 'Ready to prepare confirmation; rechecked before execution',
+      'update.preflight-passed': 'Package preflight passed; ready to review',
+      'reason.package-metadata-fetch-failed': 'Package details could not be downloaded. Check again later.',
+      'reason.package-archive-fetch-failed': 'The update archive could not be downloaded. Check again later.',
+      'reason.public-archive-redirect-unsupported': 'The archive redirects to an unapproved address. Preflight stopped.',
+      'reason.registry-metadata-unavailable': 'The public source did not provide package details. Check again later.',
+      'reason.archive-unavailable': 'The official archive is unavailable; this update is not admitted.',
+      'reason.mirror-version-unavailable': 'The mirror does not provide this version; this update is not admitted.',
+      'reason.mirror-archive-unavailable': 'The mirror archive is unavailable. Check again later.',
+      'reason.mirror-runtime-metadata-mismatch': 'Mirror runtime declarations differ from the official archive. Update refused.',
+      'reason.mirror-archive-mismatch': 'Mirror archive bytes differ from the official archive. Update refused.',
+      'reason.integrity-mismatch': 'Archive integrity verification failed. Inspect its source before updating.',
+      'reason.download-size-limit': 'The archive exceeds the preflight size budget; it was not admitted.',
+      'reason.package-preflight-unavailable': 'Package preflight is unavailable. Check the installed updater version.',
+      'reason.package-preflight-failed': 'Package preflight did not pass; it does not authorize replacement.',
+      'reason.package-preflight-changed': 'Package or installed-state evidence changed after checking. Check again.',
+      'reason.peer-graph-change': 'Historic refusal: the target changed Host peer declarations. Current versions verify peers after installation.',
+      'reason.dynamic-or-included-patch-unsupported': 'Unreviewed dynamic or nested plugin declarations prevent this update.',
+      'reason.installed-original-unverified': 'Installed files differ from the public archive. Inspect them in the official manager.',
+      'reason.sidebar-dependency-transition-unverified': 'Historic refusal for the removed fixed Better Sidebar version pair.',
+      'info.reviewed-sidebar-client-removal': 'Historic notice from the removed fixed Better Sidebar version pair.'
+    });
+    Object.assign(ZH, {
+      'update.available': '可准备确认，执行前仍需核验',
+      'update.preflight-passed': '安装包预检通过，可继续确认',
+      'reason.package-metadata-fetch-failed': '下载包详情失败，请稍后重新检查。',
+      'reason.package-archive-fetch-failed': '下载更新包失败，请稍后重新检查。',
+      'reason.public-archive-redirect-unsupported': '更新包跳转到未获准的地址，已停止预检。',
+      'reason.registry-metadata-unavailable': '查询源未能提供包详情，请稍后重新检查。',
+      'reason.archive-unavailable': '官方安装包不可用，本次未获准更新。',
+      'reason.mirror-version-unavailable': '镜像未提供此版本，本次未获准更新。',
+      'reason.mirror-archive-unavailable': '镜像安装包不可用，请稍后重新检查。',
+      'reason.mirror-runtime-metadata-mismatch': '镜像运行声明与官方原包不一致，已拒绝更新。',
+      'reason.mirror-archive-mismatch': '镜像安装包与官方原包内容不一致，已拒绝更新。',
+      'reason.integrity-mismatch': '更新包完整性校验失败，请先核对来源。',
+      'reason.download-size-limit': '安装包超过预检大小上限，本次未获准更新。',
+      'reason.package-preflight-unavailable': '安装包预检能力不可用，请核对更新器版本。',
+      'reason.package-preflight-failed': '安装包预检未通过，不能据此执行替换。',
+      'reason.package-preflight-changed': '检查后安装包或安装状态已变化，请重新检查。',
+      'reason.peer-graph-change': '历史拒绝原因：新版变更了宿主依赖声明。当前版本改为安装后核验。',
+      'reason.dynamic-or-included-patch-unsupported': '插件包含尚未获准的动态或嵌套声明，需独立审查后更新。',
+      'reason.installed-original-unverified': '当前安装文件与公开原包不一致，请先在官方管理器核对。',
+      'reason.sidebar-dependency-transition-unverified': '历史拒绝原因：旧版固定侧边栏版本对已移除。',
+      'info.reviewed-sidebar-client-removal': '历史提示：旧版固定侧边栏版本对已移除。'
     });
     const githubReasonAliases = {
       'self-github-tree-mode-unsupported': 'self-github-tree-unsupported', 'self-github-tree-path-unsupported': 'self-github-tree-unsupported',
@@ -438,7 +544,7 @@ window.__ModuleLoader__.load({
 .pud-page{height:100%;box-sizing:border-box;overflow:auto;position:relative;padding:28px clamp(18px,4vw,48px) 48px;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-base);font-family:inherit;font-size:13px;line-height:1.55}.pud-wrap{max-width:1120px;margin:0 auto}.pud-header,.pud-toolbar,.pud-inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pud-header{justify-content:space-between;align-items:flex-start;margin-bottom:20px}.pud-header h1{font-size:22px;line-height:1.4;font-weight:600;margin:0}.pud-muted{color:var(--dsw-alias-label-secondary)}.pud-subtitle{margin:6px 0 0;max-width:780px}.pud-meta{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 0;font-size:12px}.pud-card{padding:18px;border:1px solid var(--dsw-alias-border-l3);border-radius:12px;background:var(--dsw-alias-bg-layer-1);margin:16px 0;min-width:0}.pud-card h2{font-size:15px;font-weight:600;margin:0 0 12px}.pud-card h3{font-size:13px;font-weight:600;margin:14px 0 7px}.pud-btn{min-height:34px;display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;gap:7px;border:1px solid var(--dsw-alias-border-l3);border-radius:7px;background:var(--dsw-alias-button-elevated-fill);color:var(--dsw-alias-label-primary);font:inherit;cursor:pointer;transition:background-color .16s,color .16s}.pud-btn-primary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);border-color:var(--dsw-alias-button-primary-fill)}.pud-btn:disabled{opacity:1;cursor:not-allowed;background:var(--dsw-alias-button-primary-dimmed);color:var(--dsw-alias-label-secondary);border-color:var(--dsw-alias-border-l3)}.pud-btn[aria-busy=true]{cursor:progress}.pud-btn:focus-visible,.pud-record summary:focus-visible,.pud-check:focus-visible,.pud-json:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}.pud-btn-compact{padding:4px 8px;min-height:28px;font-size:12px}
 .pud-note{padding:12px 14px;border:1px solid var(--dsw-alias-border-l3);border-radius:8px;background:var(--dsw-alias-card-fill);margin:12px 0;overflow-wrap:anywhere}.pud-error{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary)}.pud-warning{border-color:var(--dsw-alias-state-warn-primary)}.pud-status{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;border:1px solid var(--dsw-alias-border-l3);font-size:12px;background:var(--dsw-alias-bg-module-platform);white-space:nowrap}.pud-status[data-state=active],.pud-status[data-state=applied],.pud-status[data-state=updated],.pud-status[data-state=restored],.pud-status[data-state=verified],.pud-status[data-state=up-to-date]{color:var(--dsw-alias-state-success-primary)}.pud-status[data-state=failed],.pud-status[data-state=error],.pud-status[data-state=missing]{color:var(--dsw-alias-state-error-primary)}.pud-status[data-state=blocked],.pud-status[data-state=recovery-required],.pud-status[data-state=unknown],.pud-status[data-state=restart-required],.pud-status[data-state=waiting]{color:var(--dsw-alias-state-warn-label)}.pud-definition{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 14px;margin:0}.pud-definition dt{color:var(--dsw-alias-label-secondary)}.pud-definition dd{margin:0;overflow-wrap:anywhere}.pud-break{overflow-wrap:anywhere;word-break:break-word}.pud-list{margin:7px 0;padding-left:22px}.pud-table-wrap{overflow:auto;max-height:460px}.pud-table{border-collapse:collapse;width:100%;font:inherit;font-size:12px;min-width:620px}.pud-table th,.pud-table td{text-align:left;padding:10px 9px;border-bottom:1px solid var(--dsw-alias-border-l2);vertical-align:top}.pud-table th{color:var(--dsw-alias-label-secondary);font-weight:500;white-space:nowrap;background:var(--dsw-alias-bg-layer-1);position:sticky;top:0;z-index:1}.pud-table td:first-child{width:28px}.pud-table .pud-package-cell{min-width:170px;max-width:300px}.pud-table tr[data-open=true]{background:var(--dsw-alias-interactive-bg-hover-solid)}.pud-check{accent-color:var(--dsw-alias-state-business-primary);width:16px;height:16px;cursor:pointer;margin:3px 0;flex:none}.pud-check:disabled{cursor:not-allowed}.pud-json{background:var(--dsw-alias-bg-module-platform);border-radius:7px;padding:12px;max-height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--dsw-alias-label-secondary);margin:10px 0 0}.pud-record{padding:12px 0;border-top:1px solid var(--dsw-alias-border-l2)}.pud-record summary{cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:28px}.pud-record-heading{font-weight:500}.pud-small{font-size:12px}.pud-footer{justify-content:space-between;margin-top:14px}.pud-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.pud-detail-head h2{margin:0}.pud-spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--dsw-alias-border-l3);border-top-color:var(--dsw-alias-label-secondary);border-radius:50%;animation:pud-spin 1s linear infinite}@keyframes pud-spin{to{transform:rotate(360deg)}}
 .pud-dialog{padding:22px;border:1px solid var(--dsw-alias-border-l3);border-radius:14px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;width:620px;max-width:calc(100vw - 40px);max-height:calc(100vh - 48px);overflow:auto;box-sizing:border-box}.pud-dialog::backdrop{background:var(--dsw-alias-bg-mask-3)}.pud-dialog h2{font-size:17px;line-height:1.4;margin:0 0 12px}.pud-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.pud-ack{display:flex;gap:10px;align-items:flex-start;margin-top:16px;cursor:pointer}.pud-dialog-list{max-height:210px;overflow:auto;margin:12px 0;padding:0;list-style:none}.pud-dialog-list li{padding:9px 0;border-bottom:1px solid var(--dsw-alias-border-l2)}
-.pud-spinner{width:13px;height:13px;box-sizing:border-box;flex:none;display:inline-block;border:2px solid currentColor;border-inline-end-color:var(--dsw-alias-bg-skeleton);border-radius:50%;animation:pud-spin .8s linear infinite}@keyframes pud-spin{to{transform:rotate(360deg)}}.pud-policy{margin:14px 0;padding:14px;border:1px solid var(--dsw-alias-border-l3);border-radius:9px;display:grid;gap:12px}.pud-policy legend{padding:0 5px;font-weight:600}.pud-policy-choice{display:flex;align-items:flex-start;gap:9px;cursor:pointer}.pud-policy-choice input{margin-top:4px;accent-color:var(--dsw-alias-state-business-primary)}.pud-policy-choice small{display:block;margin-top:3px;color:var(--dsw-alias-label-secondary)}.pud-stop-confirm{border-color:var(--dsw-alias-state-error-primary)}.pud-impact{color:var(--dsw-alias-state-warn-label)}
+.pud-spinner{width:13px;height:13px;box-sizing:border-box;flex:none;display:inline-block;border:2px solid currentColor;border-inline-end-color:var(--dsw-alias-bg-skeleton);border-radius:50%;animation:pud-spin .8s linear infinite}@keyframes pud-spin{to{transform:rotate(360deg)}}.pud-progress{padding:12px 14px;margin:12px 0;border:1px solid var(--dsw-alias-border-l3);border-radius:8px;background:var(--dsw-alias-card-fill)}.pud-progress-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;font-size:12px}.pud-progress-track{height:6px;border-radius:3px;background:var(--dsw-alias-bg-skeleton);overflow:hidden}.pud-progress-bar{height:100%;border-radius:3px;background:var(--dsw-alias-state-business-primary);transition:width .3s ease}.pud-policy{margin:14px 0;padding:14px;border:1px solid var(--dsw-alias-border-l3);border-radius:9px;display:grid;gap:12px}.pud-policy legend{padding:0 5px;font-weight:600}.pud-policy-choice{display:flex;align-items:flex-start;gap:9px;cursor:pointer}.pud-policy-choice input{margin-top:4px;accent-color:var(--dsw-alias-state-business-primary)}.pud-policy-choice small{display:block;margin-top:3px;color:var(--dsw-alias-label-secondary)}.pud-stop-confirm{border-color:var(--dsw-alias-state-error-primary)}.pud-impact{color:var(--dsw-alias-state-warn-label)}
 @media(hover:hover){.pud-btn:not(:disabled):hover{background:var(--dsw-alias-interactive-bg-hover-solid)}.pud-btn-primary:not(:disabled):hover{background:var(--dsw-alias-button-primary-hover)}}@media(max-width:680px){.pud-page{padding-top:22px}.pud-toolbar{width:100%}.pud-card{padding:14px}.pud-definition{grid-template-columns:1fr;gap:2px}.pud-definition dd{margin-bottom:9px}.pud-dialog-actions{flex-wrap:wrap}.pud-dialog-actions .pud-btn{flex:1}.pud-footer{align-items:flex-start}}@media(pointer:coarse){.pud-btn{min-height:40px}.pud-check{width:19px;height:19px}}@media(prefers-reduced-motion:reduce){.pud-spinner{animation:none}.pud-btn{transition:none}}
 `;
     const array = value => Array.isArray(value) ? value : [];
@@ -465,6 +571,24 @@ window.__ModuleLoader__.load({
       return { version, update: item?.status === 'not-checked' ? 'not-checked' : item?.status === 'available' && item?.canUpdate === true ? 'available'
         : item?.status === 'blocked' || array(item?.reasons).length ? 'blocked' : 'no-update' };
     };
+    // One short sentence per row: the main list answers "can this be updated?" without
+    // requiring the reader to parse the full evidence block.
+    const quickStatus = item => {
+      if (item?.status === 'recovery-required') return 'recovery-required';
+      if (item?.preflightError) return 'preflight-failed';
+      const states = versionStates(item), reasons = array(item?.reasons);
+      if (states.version === 'not-checked') return 'not-checked';
+      if (states.version === 'error') return 'check-failed';
+      if (states.update === 'available') return 'available';
+      if (states.version === 'up-to-date' || states.update === 'no-update') return 'up-to-date';
+      if (reasons.some(reason => ['host-dependency', 'host-runtime-dependencies', 'native-or-shared-runtime', 'core-service-takeover'].includes(reason))) return 'unavailable';
+      if (reasons.some(reason => ['restart-required', 'dependency-runtime-reload-unverified', 'unmanaged-plugin'].includes(reason))) return 'needs-restart';
+      if (reasons.some(reason => ['wsl-declaration-review-required', 'wsl-structure-changed', 'wsl-foreign-preset-module', 'peer-graph-change', 'dependency-graph-changed', 'declaration-changed'].includes(reason))) return 'unavailable';
+      if ((item?.sourceKind && item.sourceKind !== 'registry') || reasons.includes('registry-updates-only')) return 'local-source';
+      if (reasons.includes('no-compatible-stable-version')) return 'no-compatible';
+      return 'unavailable';
+    };
+    const quickStatusText = (item, t) => localText(t, 'quick.' + quickStatus(item), t('unknown'));
     const eligible = item => item?.canUpdate === true && !!string(item.latestVersion) && (hasVersionStates(item)
       ? item.versionStatus === 'available' && item.updateStatus === 'available' : item.status === 'available');
     const initialVersionItem = item => ({ ...item, canUpdate: false, latestVersion: null, latestPublishedVersion: null,
@@ -554,7 +678,8 @@ window.__ModuleLoader__.load({
         h('p', { style: { margin: '0 0 5px' }, 'data-version-status': states.version },
           h('strong', null, t('versionCheck') + ': '), h('span', { className: states.version === 'error' ? 'pud-error' : states.version === 'unknown' ? 'pud-muted' : '' }, localText(t, 'version.' + states.version, t('unknown')))),
         h('p', { style: { margin: 0 }, 'data-update-status': states.update },
-          h('strong', null, t('onlineUpdate') + ': '), h('span', { className: states.update === 'blocked' ? 'pud-impact' : '' }, localText(t, 'update.' + states.update, t('unknown')))),
+          h('strong', null, t('onlineUpdate') + ': '), h('span', { className: states.update === 'blocked' ? 'pud-impact' : '' }, states.update === 'blocked' && item?.packagePreflight?.status === 'failed' ? localText(t, 'reason.' + string(item.packagePreflight.code), t('update.blocked'))
+            : states.update === 'available' && item?.packagePreflight?.status === 'passed' ? t('update.preflight-passed') : localText(t, 'update.' + states.update, t('unknown')))),
         states.version !== 'not-checked' ? h('p', { className: 'pud-muted pud-small pud-break', style: { margin: '5px 0 0' }, 'data-testid': 'pud-query-source' },
           t('querySource') + ': ', github ? t('queryGithubSource') : origin || t('querySourceUnknown'), ' · ', t('querySourceScope')) : null,
         item?.status === 'recovery-required' ? h(Badge, { value: 'recovery-required', t }) : null);
@@ -659,7 +784,7 @@ window.__ModuleLoader__.load({
           try { await retryClient(); } catch { setRetryError(t('requestFailed')); } finally { setRetrying(false); }
         } }, t('clientSyncRetry')) : null);
     }
-    function BatchTable({ items, t, onRestore, busy = false, recoveries }) {
+    function BatchTable({ items, t, onRestore, busy = false, recoveries, onReport, reportNotice }) {
       const rows = array(items).map((item, i) => {
         const recovery = recoveries?.get(item.name);
         const canRecover = recoveryEligible(recovery) && !!string(item.recoveryId) && item.recoveryId === recovery.recoveryId;
@@ -667,22 +792,25 @@ window.__ModuleLoader__.load({
         h('td', { className: 'pud-break pud-package-cell' }, valueOf(item.name, t('noValue'))),
         h('td', null, valueOf(item.from, t('noValue'))), h('td', null, valueOf(item.to, t('noValue'))),
         h('td', null, h(Badge, { value: resultStatus(item), t })),
-        h('td', null, h(Verification, { verification: item.verification, t }),
+        h('td', null, item.restoreKind === 'restart-required-removal' ? h('p', { className: 'pud-warning pud-small', 'data-testid': 'pud-restart-rollback' }, t('restartRollback')) : null,
+           h(Verification, { verification: item.verification, t }),
            item.restore ? h('div', { className: 'pud-note pud-small' }, t('recoveryOutcome'), ' · ', h(Badge, { value: string(item.restore.application) || 'unknown', prefix: 'outcome', t }), h(Verification, { verification: item.restoreVerification, t })) : null),
         h('td', null, canRecover && typeof onRestore === 'function' ? h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: busy, onClick: () => onRestore(item.name), 'data-testid': 'pud-item-restore' }, t('restore')) : null,
+          typeof onReport === 'function' && ['failed', 'unknown', 'restart-required'].includes(string(item.status))
+            ? h('button', { type: 'button', className: 'pud-btn pud-btn-compact', 'data-testid': 'pud-copy-report', title: t('reportHint'), onClick: () => onReport(item.name) }, t(reportNotice === 'copied:' + item.name ? 'reportCopied' : 'copyReport')) : null,
           h('details', null, h('summary', null, t('detail')), h(SourceDetails, { value: item, t }))));
       });
       const head = h('thead', null, h('tr', null,
         h('th', null, t('package')), h('th', null, t('from')), h('th', null, t('to')), h('th', null, t('status')), h('th', null, t('packageVerification') + ' / ' + t('hostVerification')), h('th', null, t('resultDetails'))));
       return h('div', { className: 'pud-table-wrap' }, h('table', { className: 'pud-table' }, head, h('tbody', null, ...rows)));
     }
-    function Record({ record, t, locale, onRestore, busy, recoveries }) {
+    function Record({ record, t, locale, onRestore, busy, recoveries, onReport, reportNotice }) {
       const result = record?.result ?? record?.event ?? {}; const items = array(record?.items); const outcome = string(result.application) || string(record?.outcome) || 'unknown';
       return h('details', { className: 'pud-record' }, h('summary', null,
         h('span', { className: 'pud-record-heading pud-break' }, valueOf(record?.package ?? record?.target, items.length ? t(operationResultTitle(record?.operation)) + ' · ' + items.length : t('noValue'))),
         h(Badge, { value: outcome, prefix: 'outcome', t }), h('span', { className: 'pud-muted pud-small' }, dateText(record?.finishedAt ?? record?.time ?? record?.startedAt, locale, t))),
         h('p', { className: 'pud-muted pud-small' }, t(record?.origin === 'official-event' ? 'officialHistory' : 'ownHistory')),
-        items.length ? h(BatchTable, { items, t, onRestore, busy, recoveries }) : h('dl', { className: 'pud-definition pud-small' },
+        items.length ? h(BatchTable, { items, t, onRestore, busy, recoveries, onReport, reportNotice }) : h('dl', { className: 'pud-definition pud-small' },
           h('dt', null, t('stage')), h('dd', null, result.stage ? localText(t, 'stage.' + result.stage, result.stage) : t('noValue')),
           h('dt', null, t('from')), h('dd', null, valueOf(record?.from, t('noValue'))), h('dt', null, t('to')), h('dd', null, valueOf(record?.to, t('noValue')))),
         record?.update?.restore ? h('p', { className: 'pud-inline' }, t('recoveryOutcome'), h(Badge, { value: record.update.restore.application, prefix: 'outcome', t })) : null,
@@ -694,8 +822,8 @@ window.__ModuleLoader__.load({
       const publicMirror = mirrorAcknowledgementRequired(plan);
       const publicFallback = selfUpdating && array(plan.items).some(item => item.sourceMode === 'public-fallback');
       const unionGeneration=array(plan.items).some(item=>item.installMode==='union-generation');
-      const ref = useRef(null), cancel = useRef(null); const [ack, setAck] = useState(false), [now, setNow] = useState(Date.now());
-      const [taskPolicy, setTaskPolicy] = useState('wait-for-idle'), [confirmCancel, setConfirmCancel] = useState(false), [confirmPublicMirror, setConfirmPublicMirror] = useState(false), [confirmUnionGeneration,setConfirmUnionGeneration]=useState(false);
+      const ref = useRef(null), cancel = useRef(null); const [now, setNow] = useState(Date.now());
+      const [taskPolicy, setTaskPolicy] = useState('wait-for-idle');
       useEffect(() => {
         const previous = document.activeElement, dialog = ref.current;
         if (dialog && !dialog.open) dialog.showModal(); cancel.current?.focus();
@@ -708,6 +836,8 @@ window.__ModuleLoader__.load({
         h('div', { className: 'pud-muted' }, valueOf(item.from, t('noValue')), ' → ', valueOf(item.to, t('noValue'))),
         selfUpdating ? h(CommitDetails, { value: item, t }) : null,
         highImpactWarning(item) ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null,
+        item.dependencyClosure ? h('p', { className: 'pud-muted pud-small', 'data-testid': 'pud-dependency-closure-plan' },
+          t('dependencyClosureHint').replace('{packages}', String(item.dependencyClosure.packages)).replace('{size}', (Math.max(1, item.dependencyClosure.bytes) / 1048576).toFixed(1) + ' MB')) : null,
         h(InformationWarnings, { item, t })));
       const warningDetails = array(plan.warnings).length ? h('details', { className: 'pud-small' },
         h('summary', null, t('detail')), h('ul', { className: 'pud-list' }, ...plan.warnings.map((text, i) => h('li', { key: i }, string(text))))) : null;
@@ -724,12 +854,9 @@ window.__ModuleLoader__.load({
       },
       h('h2', { id: 'pud-confirm-title' }, selfUpdating ? t('confirmSelfTitle') : migrating ? t('confirmMigrationTitle') : t(restoring ? 'confirmRestoreTitle' : 'confirmTitle')),
       h('p', { id: 'pud-confirm-impact', className: 'pud-muted' }, selfUpdating ? t('confirmSelfImpact') : migrating ? t('confirmMigrationImpact') : t(restoring ? 'confirmRestoreImpact' : 'confirmImpact')),
-      h('dl', { className: 'pud-definition' },
-        h('dt', null, t('profile')), h('dd', null, valueOf(plan.profile, t('noValue'))),
-        h('dt', null, t('taskPolicy')), h('dd', null, t(taskPolicy === 'cancel-active' ? 'stopPolicy' : 'waitPolicy')),
-        h('dt', null, t('expires')), h('dd', null, dateText(plan.expiresAt, locale, t))),
+      h('p', { className: 'pud-muted pud-small' }, t('profile') + ': ', valueOf(plan.profile, t('noValue')), ' · ', t('expires') + ': ', dateText(plan.expiresAt, locale, t)),
       h('ul', { className: 'pud-dialog-list', 'aria-label': t(operationResultTitle(plan.operation)) }, ...reviewItems),
-      migrating ? h('p', { className: 'pud-note pud-warning', 'data-testid': 'pud-migration-safety' }, t('migrationSafety')) : null,
+      migrating ? h('div', { className: 'pud-note', 'data-testid': 'pud-migration-safety' }, h('p', null, t('migrationSafety'))) : null,
       publicMirror ? h('div', { className: 'pud-note pud-warning', 'data-testid': 'pud-public-mirror-safety' },
         h('p', { className: 'pud-small' }, t(publicFallback ? 'publicFallbackSafety' : 'mirrorSafety')),
         mirrorPlanEvidence(plan).complete ? h(React.Fragment, null,
@@ -737,28 +864,20 @@ window.__ModuleLoader__.load({
           h('dl', { className: 'pud-definition pud-small' }, ...mirrorPlanEvidence(plan).rows.map((row, i) => h(React.Fragment, { key: i }, h('dt', null, t(row.label)), h('dd', null, row.origin || t('querySourceUnknown')))))) : h(React.Fragment, null,
           h('p', { className: 'pud-muted pud-small', 'data-testid': 'pud-mirror-plan-unavailable' }, t('mirrorPlanUnavailable')),
           h('p', { className: 'pud-muted pud-small' }, t(mirrorPlanEvidence(plan).fallbackLabel))),
-        h('ul', { className: 'pud-list pud-small' }, ...array(plan.items).filter(item => item?.publicMirror || item?.publicFallback || item?.sourceMode === 'public-mirror' || item?.sourceMode === 'public-fallback' || safeQueryOrigin(item?.registry) === 'https://registry.npmmirror.com').map((item, i) => h('li', { key: i }, string(item.name), ' · ', safeQueryOrigin(item.registry) || t('querySourceUnknown')))),
-        h('label', { className: 'pud-ack' }, h('input', { type: 'checkbox', className: 'pud-check', checked: confirmPublicMirror, onChange: event => setConfirmPublicMirror(event.target.checked), 'data-testid': 'pud-confirm-public-mirror' }), h('span', null, t(publicFallback ? 'acknowledgePublicFallback' : 'acknowledgeMirror')))) : null,
+        h('ul', { className: 'pud-list pud-small' }, ...array(plan.items).filter(item => item?.publicMirror || item?.publicFallback || item?.sourceMode === 'public-mirror' || item?.sourceMode === 'public-fallback' || safeQueryOrigin(item?.registry) === 'https://registry.npmmirror.com').map((item, i) => h('li', { key: i }, string(item.name), ' · ', safeQueryOrigin(item.registry) || t('querySourceUnknown'))))) : null,
       githubUpdating ? h('p', { className: 'pud-note pud-warning', 'data-testid': 'pud-github-safety' }, t('githubConfirmSafety')) : null,
       h('fieldset', { className: 'pud-policy' }, h('legend', null, t('taskPolicy')),
-        h('label', { className: 'pud-policy-choice' }, h('input', { type: 'radio', name: 'pud-task-policy', value: 'wait-for-idle', checked: taskPolicy === 'wait-for-idle', onChange: () => { setTaskPolicy('wait-for-idle'); setConfirmCancel(false); } }),
+        h('label', { className: 'pud-policy-choice' }, h('input', { type: 'radio', name: 'pud-task-policy', value: 'wait-for-idle', checked: taskPolicy === 'wait-for-idle', onChange: () => { setTaskPolicy('wait-for-idle'); } }),
           h('span', null, t('waitPolicy'), h('small', null, t(selfUpdating ? 'selfGateHelp' : 'waitPolicyHelp')))),
-        h('label', { className: 'pud-policy-choice' }, h('input', { type: 'radio', name: 'pud-task-policy', value: 'cancel-active', checked: taskPolicy === 'cancel-active', disabled: !array(plan.taskPolicies).includes('cancel-active'), onChange: () => { setTaskPolicy('cancel-active'); setConfirmCancel(false); } }),
+        h('label', { className: 'pud-policy-choice' }, h('input', { type: 'radio', name: 'pud-task-policy', value: 'cancel-active', checked: taskPolicy === 'cancel-active', disabled: !array(plan.taskPolicies).includes('cancel-active'), onChange: () => { setTaskPolicy('cancel-active'); } }),
           h('span', null, t('stopPolicy'), h('small', null, t('stopPolicyHelp'))))),
-      taskPolicy === 'cancel-active' ? h('label', { className: 'pud-note pud-ack pud-stop-confirm' },
-        h('input', { type: 'checkbox', className: 'pud-check', checked: confirmCancel, onChange: event => setConfirmCancel(event.target.checked), 'data-testid': 'pud-confirm-cancel' }),
-        h('span', null, t('stopConsent'))) : null,
-      h('p', { className: 'pud-note pud-warning' }, t(selfUpdating ? 'selfGateHelp' : 'confirmSafety')),
       !selfUpdating && array(plan.items).some(item=>item.installMode==='registry-spec') ? h('p',{className:'pud-note pud-warning','data-testid':'pud-registry-handoff-safety'},t('registryHandoffSafety')) : null,
-unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-union-generation-safety'},h('p',null,t('unionGenerationSafety')),h('label',{className:'pud-ack'},h('input',{type:'checkbox',className:'pud-check',checked:confirmUnionGeneration,onChange:event=>setConfirmUnionGeneration(event.target.checked),'data-testid':'pud-confirm-union-generation'}),h('span',null,t('acknowledgeUnionGeneration')))) : null,
+unionGeneration ? h('div', { className: 'pud-note', 'data-testid': 'pud-union-generation-safety' }, h('p', null, t('unionGenerationSafety'))) : null,
       warningDetails,
-      h('label', { className: 'pud-ack' },
-        h('input', { type: 'checkbox', className: 'pud-check', checked: ack, onChange: event => setAck(event.target.checked) }),
-        h('span', null, githubUpdating ? t('acknowledgeGithubSelf') : selfUpdating ? t('acknowledgeSelf') : migrating ? t('acknowledgeMigration') : t(restoring ? 'acknowledgeRestore' : 'acknowledge'))),
       expired ? h('p', { className: 'pud-error', role: 'alert' }, t('expired')) : null,
       h('div', { className: 'pud-dialog-actions' },
         h('button', { ref: cancel, type: 'button', className: 'pud-btn', onClick: onCancel }, t('cancel')),
-        h('button', { type: 'button', className: 'pud-btn pud-btn-primary', disabled: !ack || expired || !array(plan.items).length || (taskPolicy === 'cancel-active' && !confirmCancel) || (publicMirror && !confirmPublicMirror) || (unionGeneration && !confirmUnionGeneration), onClick: () => onConfirm({ taskPolicy, ...(taskPolicy === 'cancel-active' ? { confirmCancel: true } : {}), ...(publicMirror && confirmPublicMirror ? { confirmPublicMirror: true } : {}), ...(unionGeneration && confirmUnionGeneration ? {confirmUnionGeneration:true} : {}) }) }, selfUpdating ? t(taskPolicy === 'cancel-active' ? 'selfStop' : 'selfWait') : migrating ? t(taskPolicy === 'cancel-active' ? 'confirmMigrationStop' : 'confirmMigrationWait') : t(restoring ? taskPolicy === 'cancel-active' ? 'confirmRestoreStop' : 'confirmRestoreWait' : taskPolicy === 'cancel-active' ? 'confirmStop' : 'confirmWait'))));
+        h('button', { type: 'button', className: 'pud-btn pud-btn-primary', disabled: expired || !array(plan.items).length, onClick: () => onConfirm({ taskPolicy, ...(taskPolicy === 'cancel-active' ? { confirmCancel: true } : {}), ...(publicMirror ? { confirmPublicMirror: true } : {}), ...(unionGeneration ? { confirmUnionGeneration: true } : {}), ...(migrating ? { confirmMigration: true } : {}) }) }, selfUpdating ? t(taskPolicy === 'cancel-active' ? 'selfStop' : 'selfWait') : migrating ? t(taskPolicy === 'cancel-active' ? 'confirmMigrationStop' : 'confirmMigrationWait') : t(restoring ? taskPolicy === 'cancel-active' ? 'confirmRestoreStop' : 'confirmRestoreWait' : taskPolicy === 'cancel-active' ? 'confirmStop' : 'confirmWait'))));
     }
     class PanelBoundary extends React.Component {
       constructor(props) { super(props); this.state = { failed: false }; }
@@ -774,6 +893,9 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
       const [openName, setOpenName] = useState(''), [diagnosis, setDiagnosis] = useState(null), [locks, setLocks] = useState(null);
       const [pending, setPending] = useState(''), [error, setError] = useState(null), [plan, setPlan] = useState(null);
       const [operationId, setOperationId] = useState(''), [operation, setOperation] = useState(null), [pollNotice, setPollNotice] = useState(''), [pollEpoch, setPollEpoch] = useState(0);
+      const [reportNotice, setReportNotice] = useState('');
+      const [reportText, setReportText] = useState('');
+      const [scanProgress, setScanProgress] = useState(null);
       const [selfOperationId, setSelfOperationId] = useState(''), [selfState, setSelfState] = useState(null);
       const mounted = useRef(true), generation = useRef(0), requests = useRef(new Set()), openRef = useRef(openName); openRef.current = openName;
       useEffect(() => { mounted.current = true; return () => { mounted.current = false; for (const controller of requests.current) controller.abort(); }; }, []);
@@ -782,6 +904,17 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
         const controller = new AbortController(); requests.current.add(controller);
         try { return await request(action, params, method, controller.signal, timeout); } finally { requests.current.delete(controller); }
       }, []);
+      const copyReport = useCallback(async name => {
+        try {
+          const report = await read('report', name ? { name } : {});
+          const lastError = error?.code || error?.diagnostic ? { code: error.code || null, diagnostic: error.diagnostic || null } : null;
+          const document = lastError ? { ...report, client: { lastError } } : report;
+          const text = JSON.stringify(document, null, 2);
+          setReportText(text);
+          await navigator.clipboard.writeText(text);
+          setReportNotice(name ? 'copied:' + name : 'copied');
+        } catch { setReportNotice('failed'); }
+      }, [read, error]);
       const load = useCallback(async () => {
         const answer = await read('list'); if (!mounted.current) return;
         setSnapshot(answer); setSelfState(answer.selfUpdate ?? null);
@@ -856,9 +989,16 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
         try { await load(); } catch (issue) { if (mounted.current) setError(errorInfo(issue)); } finally { if (mounted.current) setPending(''); }
       };
       const scan = async () => {
-        if (pending || busy) return; setPending('scan'); setError(null); setChecked(new Set()); setPlan(null);
-        try { const answer = await read('scan', {}, 'GET', 180000); if (mounted.current) { setScanResult(answer); setSnapshot(current => ({ ...(current ?? {}), profile: answer.profile, runtimeVersion: answer.runtimeVersion })); } }
-        catch (issue) { if (mounted.current) { setScanResult(null); setError(errorInfo(issue)); } } finally { if (mounted.current) setPending(''); }
+        if (pending || busy) return; setPending('scan'); setError(null); setChecked(new Set()); setPlan(null); setScanProgress({ phase: 'versions', done: 0, total: 0, current: null });
+        const progressId = 'scan-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        let poll = null;
+        poll = setInterval(async () => {
+          try { const progress = await read('scan-progress', { id: progressId }, 'GET', 15000); if (mounted.current) setScanProgress(progress); } catch { /* transient polls do not abort the scan */ }
+          if (!mounted.current) clearInterval(poll);
+        }, 1200);
+        try { const answer = await read('scan', { progressId }, 'GET', 300000); if (mounted.current) { setScanResult(answer); setSnapshot(current => ({ ...(current ?? {}), profile: answer.profile, runtimeVersion: answer.runtimeVersion })); } }
+        catch (issue) { if (mounted.current) { setScanResult(null); setError(errorInfo(issue)); } }
+        finally { clearInterval(poll); if (mounted.current) { setPending(''); setScanProgress(null); } }
       };
       const prepare = async () => {
         if (pending || busy || !selected.length) return; setPending('prepare'); setError(null);
@@ -894,10 +1034,10 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
           else setError({ code: 'state-changed', diagnostic: array(answer.reasons).join('; ') });
         } catch (issue) { if (mounted.current) setError(errorInfo(issue)); } finally { if (mounted.current) setPending(''); }
       };
-      const commit = async ({ taskPolicy = 'wait-for-idle', confirmCancel, confirmPublicMirror, confirmUnionGeneration } = {}) => {
+      const commit = async ({ taskPolicy = 'wait-for-idle', confirmCancel, confirmPublicMirror, confirmUnionGeneration, confirmMigration } = {}) => {
         if (!plan || pending) return; const ticket = plan.ticket; setPlan(null); setPending('commit'); setError(null); setOperation(null);
         try {
-          const answer = await read('commit', { ticket, taskPolicy, ...(taskPolicy === 'cancel-active' && confirmCancel === true ? { confirmCancel: true } : {}), ...(mirrorAcknowledgementRequired(plan) && confirmPublicMirror === true ? { confirmPublicMirror: true } : {}), ...(array(plan.items).some(item=>item.installMode==='union-generation')&&confirmUnionGeneration===true?{confirmUnionGeneration:true}:{}) }, 'POST', 45000);
+          const answer = await read('commit', { ticket, taskPolicy, ...(taskPolicy === 'cancel-active' && confirmCancel === true ? { confirmCancel: true } : {}), ...(mirrorAcknowledgementRequired(plan) && confirmPublicMirror === true ? { confirmPublicMirror: true } : {}), ...(array(plan.items).some(item=>item.installMode==='union-generation')&&confirmUnionGeneration===true?{confirmUnionGeneration:true}:{}), ...(isMigration(plan.operation)&&confirmMigration===true?{confirmMigration:true}:{}) }, 'POST', 45000);
           if (!mounted.current) return;
           if (typeof answer.operationId !== 'string') { setPollNotice('unknownOperation'); await load(); return; }
           if (isSelf(answer.operation)) {
@@ -931,7 +1071,7 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
         setChecked(current => { const next = new Set(current); if (enabled) next.add(item.name); else next.delete(item.name); return next; });
       };
       const reasonText = reason => localText(t, 'reason.' + string(reason), string(reason) || t('unknown'));
-      const errorText = error?.code === 'timeout' ? t('timeout') : error?.code === 'batch-limit' ? t('batchLimit') : ['stale-confirmation', 'state-changed'].includes(error?.code) ? t('stale') : error?.code === 'busy' ? t('externalBusy') : t('requestFailed');
+      const errorText = error?.code === 'timeout' ? t('timeout') : error?.code === 'batch-limit' ? t('batchLimit') : ['stale-confirmation', 'state-changed'].includes(error?.code) ? t('stale') : error?.code === 'busy' ? t('externalBusy') : localText(t, 'reason.' + string(error?.code), t('requestFailed'));
       const detailBundle = diagnosis?.bundle ?? byName.get(openName);
       const operationItems = array(operation?.record?.items);
       const staging = currentPhase === 'waiting' && operationItems.some(item => item.status === 'preparing');
@@ -945,12 +1085,20 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
           h('td', { className: 'pud-package-cell pud-break' }, h('strong', null, item.name),
             item.runtimePackaging==='union-dependency-generation' ? h('p',{className:'pud-muted pud-small'},t('unionGenerationSource')) : item.doctorArchive === true ? h('p', { className: 'pud-muted pud-small' }, t('archiveSourceIdentity')) : null),
           h('td', null, valueOf(item.version, t('noValue'))), h('td', null, h(VersionValue, { item, t })),
-          h('td', null, h(VersionState, { item, t }),
-            item.mode === 'host-self-update' ? h('p', { className: versionStates(item).version === 'not-checked' ? 'pud-muted pud-small' : 'pud-impact pud-small' },
-              versionStates(item).version === 'not-checked' ? t('selfCheckHelp') : [t('selfMode'), ' · ', t('selfHelp')]) : null,
-            item.mode === 'host-self-update' && item.sourceKind === 'git' ? h('details', { className: 'pud-small' }, h('summary', null, t('githubHead')), h(CommitDetails, { value: item, t })) : null,
-            highImpactWarning(item) ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null,
-            h(InformationWarnings, { item, t }), reasons),
+          h('td', null, h('p', { className: 'pud-small', style: { margin: 0 }, 'data-quick-status': quickStatus(item) }, quickStatusText(item, t)),
+            item.packagePreflight?.hostDependencies?.length ? h('span', { className: 'pud-impact pud-small', style: { marginInlineStart: 6 }, 'data-testid': 'pud-host-dependencies-badge' }, t('hostDependenciesBadge')) : null,
+            h('details', { className: 'pud-small', style: { marginTop: 4 } }, h('summary', null, t('rowDetails')),
+              h(VersionState, { item, t }),
+              item.mode === 'host-self-update' ? h('p', { className: versionStates(item).version === 'not-checked' ? 'pud-muted pud-small' : 'pud-impact pud-small' },
+                versionStates(item).version === 'not-checked' ? t('selfCheckHelp') : [t('selfMode'), ' · ', t('selfHelp')]) : null,
+              item.mode === 'host-self-update' && item.sourceKind === 'git' ? h('details', { className: 'pud-small' }, h('summary', null, t('githubHead')), h(CommitDetails, { value: item, t })) : null,
+              highImpactWarning(item) ? h('p', { className: 'pud-impact pud-small' }, t('highImpact')) : null,
+              h(InformationWarnings, { item, t }),
+              item.preflightError ? h('p', { className: 'pud-muted pud-small', 'data-testid': 'pud-preflight-error' }, t('preflightRetryHint')) : null,
+              item.packagePreflight?.hostDependencies?.length ? h('p', { className: 'pud-impact pud-small', 'data-testid': 'pud-host-dependencies' }, t('hostDependenciesWarning').replace('{list}', item.packagePreflight.hostDependencies.join(', '))) : null,
+              item.generationPreflight?.status === 'download-required' ? h('p', { className: 'pud-muted pud-small', 'data-testid': 'pud-dependency-closure' },
+                t('dependencyClosurePlanned').replace('{packages}', String(item.generationPreflight.closurePackages ?? '?'))) : null,
+              reasons)),
           h('td', null, h('div', { className: 'pud-inline' }, h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: !!pending,
             onClick: () => setOpenName(current => current === item.name ? '' : item.name), 'aria-expanded': openName === item.name }, t('diagnosis')),
             recoveryEligible(item) ? h('button', { type: 'button', className: 'pud-btn pud-btn-compact', disabled: !!pending || busy, onClick: () => { void prepareRestore(item.name); }, 'data-testid': 'pud-restore' }, t('restore')) : null,
@@ -972,7 +1120,7 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
           pending === 'prepare' || pending === 'commit' ? h('span', { className: 'pud-spinner', 'aria-hidden': true }) : null,
           t(pending === 'prepare' ? 'reviewing' : pending === 'commit' ? 'queuing' : 'updateSelected') + (selected.length ? ' (' + selected.length + ')' : '')));
       const mainList = h('section', { className: 'pud-card' }, h('h2', null, t('installed')),
-        h('p', { className: 'pud-muted pud-small' }, t('scanHint')), h('p', { className: 'pud-muted pud-small' }, t('sourcePublicOnly')),
+        h('p', { className: 'pud-muted pud-small' }, t('scanHint')),
         scanResult?.checkedAt ? h('p', { className: 'pud-muted pud-small' }, t('lastChecked') + ': ', dateText(scanResult.checkedAt, locale, t)) : null,
         pluginTable, footer,
         available.length > 20 ? h('p', { className: 'pud-muted pud-small' }, t('batchLimit')) : null,
@@ -997,7 +1145,8 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
           h('dt', null, t('source')), h('dd', null, localText(t, installedSourceLabel(detailBundle), t('noValue')))) : null,
         h('div', { className: 'pud-toolbar', style: { marginTop: 14 } }, h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy || !detailBundle?.installed,
           onClick: () => { void runLocks(); } }, t('locks')), recoveryEligible(detailBundle) ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy, onClick: () => { void prepareRestore(openName); }, 'data-testid': 'pud-detail-restore' }, t('restore')) : null,
-          migrationEligible(detailBundle) ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy || !!checked.size, onClick: () => { void prepareMigration(openName); }, 'data-testid': 'pud-detail-migrate' }, t('migrateSource')) : null),
+          migrationEligible(detailBundle) ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending || busy || !!checked.size, onClick: () => { void prepareMigration(openName); }, 'data-testid': 'pud-detail-migrate' }, t('migrateSource')) : null,
+          h('button', { type: 'button', className: 'pud-btn', 'data-testid': 'pud-copy-report-detail', onClick: () => { void copyReport(openName); } }, t('copyReport'))),
         migrationEligible(detailBundle) ? h('p', { className: 'pud-note pud-warning' }, t('migrationHelp')) : null,
         recoveryEligible(detailBundle) ? h('div', { className: 'pud-note pud-warning' }, h('strong', null, t('recoveryTarget') + ': ', detailBundle.restoreVersion), h('p', { className: 'pud-muted pud-small' }, t('recoveryHelp'))) : null,
         h(Finding, { finding: diagnosis?.classification, t }), lockView,
@@ -1028,7 +1177,7 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
       const results = operation?.record ? h('section', { className: 'pud-card' },
         h('h2', null, t(isMigration(operation.record.operation) ? 'migrationResults' : isRestore(operation.record.operation) ? 'restoreResults' : terminalPhase(operation.phase) ? 'finished' : 'batchResults')),
         terminalPhase(operation.phase) ? h('p', { className: 'pud-muted' }, t(operation.phase === 'finished' ? 'finishedDetail' : 'unknownOperation')) : null,
-        operationItems.length ? h(BatchTable, { items: operationItems, t, onRestore: prepareRestore, busy: busy || !!pending, recoveries: currentItems }) : h('p', { className: 'pud-muted' }, t('noResults')),
+        operationItems.length ? h(BatchTable, { items: operationItems, t, onRestore: prepareRestore, busy: busy || !!pending, recoveries: currentItems, onReport: copyReport, reportNotice }) : h('p', { className: 'pud-muted' }, t('noResults')),
         h('details', { className: 'pud-small', style: { marginTop: 12 } }, h('summary', null, t('detail')), h(SourceDetails, { value: operation, t }))) : null;
       const selfOutcome = selfState?.result?.result?.application === 'applied' && !selfState.verifiedApplied ? 'unknown' : string(selfState?.result?.result?.application) || string(selfState?.result?.outcome) || 'unknown';
       const selfView = selfState ? h('section', { className: 'pud-card', 'data-testid': 'pud-self-update', 'aria-live': 'polite' },
@@ -1043,26 +1192,63 @@ unionGeneration ? h('div',{className:'pud-note pud-warning','data-testid':'pud-u
         selfState.warning ? h('p', { className: 'pud-warning' }, t('selfUnknown')) : null,
         selfState.phase === 'waiting' ? h('button', { type: 'button', className: 'pud-btn', disabled: !!pending, onClick: () => { void cancelSelfWait(); } }, t('cancelWait')) : null,
         h('details', null, h('summary', null, t('detail')), h(SourceDetails, { value: selfState, t }))) : null;
+      const restart = snapshot?.restart, restartPending = restart?.pending, restartLast = restart?.last;
+      const restartNotice = !restartPending && !restartLast ? null : h('div', { className: 'pud-note' + (restartLast && restartLast.outcome !== 'applied' ? ' pud-warning' : ''), role: 'status', 'data-testid': 'pud-restart' },
+        h('strong', null, restartPending ? t('restartPending') : t(restartLast.outcome === 'applied' ? 'restartApplied' : restartLast.outcome === 'rolled-back' ? 'restartRolledBack' : 'restartUnknown')),
+        h('span', { className: 'pud-muted pud-small' }, ' · ', (restartPending ?? restartLast).name, ' ', restartPending ? restartPending.from + ' → ' + restartPending.to : restartLast.outcome === 'rolled-back' ? restartLast.from : restartLast.to));
       const header = h('header', { className: 'pud-header' },
-        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.5.4')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
+        h('div', null, h('h1', null, t('title'), h('span', {className:'pud-muted',style:{fontSize:12,marginInlineStart:10,fontWeight:400}}, 'v0.6.14')), h('p', { className: 'pud-subtitle pud-muted' }, t('intro')),
           h('div', { className: 'pud-meta pud-muted' }, h('span', null, t('profile') + ': ', valueOf(snapshot?.profile, t('noValue'))), h('span', null, t('runtime') + ': ', valueOf(snapshot?.runtimeVersion, t('noValue'))))),
         h('div', { className: 'pud-toolbar' },
           h('button', { type: 'button', className: 'pud-btn', disabled: !!pending, onClick: () => { void refresh(); }, 'data-testid': 'pud-refresh' }, t('refresh')),
+          h('button', { type: 'button', className: 'pud-btn', onClick: () => { void copyReport(); }, 'data-testid': 'pud-copy-report-all' }, t('copyReportAll')),
           h('button', { type: 'button', className: 'pud-btn pud-btn-primary', disabled: !!pending || busy, 'aria-busy': pending === 'scan', onClick: () => { void scan(); }, 'data-testid': 'pud-scan' },
             pending === 'scan' ? h('span', { className: 'pud-spinner', 'aria-hidden': true }) : null, t(pending === 'scan' ? 'scanning' : 'scan'))));
       const failure = error ? h('div', { className: 'pud-note pud-error', role: 'alert' },
-        h('strong', null, errorText), error.code ? h('span', null, ' (' + error.code + ')') : null,
-        error.diagnostic ? h('details', null, h('summary', null, t('detail')), h('p', { className: 'pud-break' }, error.diagnostic)) : error.code === 'batch-limit' ? null : h('p', null, t('transportFailed'))) : null;
+        h('strong', null, errorText),
+        error.diagnostic || error.code ? h('details', null, h('summary', null, t('detail')),
+          error.code ? h('p', { className: 'pud-break' }, error.code) : null,
+          error.diagnostic ? h('p', { className: 'pud-break' }, error.diagnostic) : null) : null,
+        !error.diagnostic && error.code !== 'batch-limit' ? h('p', null, t('transportFailed')) : null) : null;
       const history = h('section', { className: 'pud-card' }, h('h2', null, t('history')),
-        array(snapshot?.history).length ? snapshot.history.slice(0, 12).map(record => h(Record, { key: record.id, record, t, locale, onRestore: prepareRestore, busy: busy || !!pending, recoveries: currentItems })) : h('p', { className: 'pud-muted' }, t('noHistory')));
+        array(snapshot?.history).length ? snapshot.history.slice(0, 12).map(record => h(Record, { key: record.id, record, t, locale, onRestore: prepareRestore, busy: busy || !!pending, recoveries: currentItems, onReport: copyReport, reportNotice })) : h('p', { className: 'pud-muted' }, t('noHistory')));
       const limits = array(snapshot?.limitations).length ? h('details', { className: 'pud-muted pud-small' }, h('summary', null, t('limitations')),
         h('ul', { className: 'pud-list' }, ...snapshot.limitations.map((item, i) => h('li', { key: i }, string(item))))) : null;
+      // Everything below answers "what next?" — technical evidence lives in one
+      // collapsed diagnostics section instead of the normal reading path.
+      const syncProblem = array(clientSync?.failures).length > 0;
+      const selfActive = !!selfState && (!!selfState.attempt && !selfState.result || ['waiting', 'handed-off'].includes(string(selfState.phase)));
+      const diagnostics = h('details', { className: 'pud-card', 'data-testid': 'pud-diagnostics' },
+        h('summary', null, t('diagnostics')),
+        h('p', { className: 'pud-muted pud-small' }, t('diagnosticNote')),
+        h('p', { className: 'pud-muted pud-small' }, t('safety')),
+        h('p', { className: 'pud-muted pud-small' }, t('sourcePublicOnly')),
+        syncProblem ? null : h(ClientSync, { state: clientSync, retryClient, t }),
+        selfActive ? null : selfView,
+        history, limits);
+      const scanBar = pending === 'scan' && scanProgress ? (() => {
+        const total = Math.max(0, Number(scanProgress.total) || 0), done = Math.min(total || Number.MAX_SAFE_INTEGER, Math.max(0, Number(scanProgress.done) || 0));
+        const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+        const label = scanProgress.phase === 'complete' ? t('scan.phase.complete')
+          : scanProgress.current ? t('scanProgressLabel').replace('{name}', string(scanProgress.current)).replace('{done}', String(Math.min(done + 1, total || done + 1))).replace('{total}', String(total || '?'))
+            : t('scan.phase.' + (string(scanProgress.phase) || 'versions'));
+        return h('div', { className: 'pud-progress', role: 'status', 'aria-live': 'polite', 'data-testid': 'pud-scan-progress' },
+          h('div', { className: 'pud-progress-head' }, h('span', { className: 'pud-break' }, label), total > 0 ? h('span', { className: 'pud-muted pud-small' }, pct + '%') : null),
+          h('div', { className: 'pud-progress-track', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': pct },
+            h('div', { className: 'pud-progress-bar', style: { width: pct + '%' } })));
+      })() : null;
       return h('div', { className: 'pud-page' }, h('style', null, CSS),
-        h('div', { className: 'pud-wrap' }, header, h('div', { className: 'pud-note pud-muted', role: 'note' }, t('safety')), failure,
+        h('div', { className: 'pud-wrap' }, header, scanBar,
+          reportNotice ? h('p', { className: 'pud-note pud-muted pud-small', role: 'status', 'data-testid': 'pud-report-notice' }, reportNotice === 'failed' ? t('reportFailed') : t('reportCopied') + ' · ' + t('reportHint')) : null,
+          reportText ? h('details', { className: 'pud-card pud-small', 'data-testid': 'pud-report-view', ...(reportNotice === 'failed' ? { open: true } : {}) },
+            h('summary', null, t('showReport')),
+            h('pre', { className: 'pud-json', tabIndex: 0, 'data-testid': 'pud-report-json' }, reportText)) : null,
+          restartNotice, failure,
           snapshot?.persistenceWarning ? h('div', { className: 'pud-note pud-warning', role: 'status' }, t('persistence') + ': ', string(snapshot.persistenceWarning)) : null,
            snapshot?.truncationWarning ? h('div', { className: 'pud-note pud-muted', role: 'status' }, t('historyTruncated')) : null,
-          pending ? h('div', { className: 'pud-inline pud-muted', role: 'status', 'aria-live': 'polite' }, h('span', { className: 'pud-spinner', 'aria-hidden': true }), t(pending === 'scan' ? 'scanning' : pending === 'prepare-migration' ? 'reviewingMigration' : pending === 'prepare-restore' ? 'reviewingRestore' : 'loading')) : null,
-          h(ClientSync, { state: clientSync, retryClient, t }), selfView, progress, results, mainList, detailView, history, limits),
+          pending && !(pending === 'scan' && scanProgress) ? h('div', { className: 'pud-inline pud-muted', role: 'status', 'aria-live': 'polite' }, h('span', { className: 'pud-spinner', 'aria-hidden': true }), t(pending === 'scan' ? 'scanning' : pending === 'prepare-migration' ? 'reviewingMigration' : pending === 'prepare-restore' ? 'reviewingRestore' : 'loading')) : null,
+          syncProblem ? h(ClientSync, { state: clientSync, retryClient, t }) : null, selfActive ? selfView : null,
+          progress, results, mainList, detailView, diagnostics),
         plan ? h(ConfirmDialog, { plan, t, locale, onCancel: () => setPlan(null), onConfirm: policy => { void commit(policy); } }) : null);
     }
     return {

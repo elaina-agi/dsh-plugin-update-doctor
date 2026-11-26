@@ -13,6 +13,7 @@ import { createHandler, ROUTE } from './lib/http.js';
 import { TaskGate } from './lib/task-gate.js';
 import { RegistryStager } from './lib/staging.js';
 import { UnionGenerationStager } from './lib/union-staging.js';
+import { createRunningGenerationVerifier } from './lib/running-generation.js';
 
 export const name = 'plugin-update-doctor';
 export const inject = ['pluginManager', 'profileContext', 'agents'];
@@ -27,22 +28,25 @@ export async function apply(ctx) {
     // on the manager's providing context; teardown independence is verified by an isolated Host proof.
     const manager = ctx.get('pluginManager');
     const unionStager = new UnionGenerationStager(join(profile.home,'cache','dsh-plugin-update-doctor',profile.name,'union-staged'),{registryStager:stager});
-    const verifyRunningGeneration=async(directory,reference,{enabled}={})=>{
-        const entry=[...ctx.loader.entries()].find(value=>value.options.id==='web-search-free'&&value.options.name==='dsh-union-search');
-        if(enabled===false)return !entry?.fiber || entry.disabled===true;
-        if(!entry?.moduleNamespace)return false;
-        const originalEntry=pathToFileURL(join(directory,reference.runtimeGeneration.generation,'lib/index.js')).href;
-        const namespace=await import(originalEntry);if(entry.moduleNamespace!==namespace)return false;
-        const sharedPath=resolvePluginResource('@deepseek-ai/schemastery',originalEntry),shared=await import(pathToFileURL(sharedPath).href);
-        if(sharedPath.includes(reference.runtimeGeneration.generation+'/node_modules/')||sharedPath.includes(reference.runtimeGeneration.generation.replaceAll('/','\\')+'\\node_modules\\'))return false;
-        return typeof namespace.Config==='function' && Object.getPrototypeOf(namespace.Config)===shared.default.prototype;
-    };
+    // The exact running Loader namespace is the only proof that the fresh generation
+    // actually executed; ordinary installs keep the shared Host Schemastery identity.
+    const verifyRunningGeneration = createRunningGenerationVerifier({
+        entries: () => ctx.loader.entries(),
+        resolveShared: (name, from) => resolvePluginResource(name, from),
+    });
     const service = new DoctorService({
         manager, profile, runtimeVersion: getDshRuntimeVersion(),
         resolvePackage: async packageName => resolveBundleDir('dsh', packageName, profile.installAnchor, profile.dir),
         probeLocks, statePath: join(profile.home, 'cache', 'dsh-plugin-update-doctor', profile.name, 'history.json'), taskGate, stager, unionStager, verifyRunningGeneration, hmrAvailable:!!ctx.get('hmr'),
     });
     await service.initialize();
+    // Finish or undo a restart handoff recorded by an earlier process. This runs once,
+    // after the Host settles, and never blocks the plugin's own activation.
+    const resumeTimer = setTimeout(() => {
+        service.resumePendingRestart().catch(() => { service.restartEvidence = { outcome: 'unknown', reason: 'resume-failed' }; });
+    }, 4000);
+    resumeTimer.unref?.();
+    ctx.effect(() => () => clearTimeout(resumeTimer), 'plugin-update-doctor: restart handoff');
     const selfUpdate = new SelfUpdateCoordinator({ manager, profile, taskGate,
         preflight: new SelfUpdatePreflight({ compatibility: manifest => evaluatePluginCompatibility(manifest, {}) }),
         githubPreflight: new GithubSelfUpdatePreflight({ compatibility: manifest => evaluatePluginCompatibility(manifest, {}) }),

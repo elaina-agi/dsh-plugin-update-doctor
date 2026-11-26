@@ -24,16 +24,22 @@ test('WSL route recognizes stable candidates while full archive preflight remain
  assert.equal(isGenerationSupported({name:'other',version:'0.28.0'}),false);
 });
 
-test('modern patch requires all sixteen reviewed root rows and unchanged provider suppression',()=>{
+test('modern patch records inserted rows without an exact row allowlist while provider suppression stays mandatory',()=>{
  const inspected=inspectWslPatches([patch()],manifest);assert.equal(inspected.rows.length,16);
  assert.equal(inspected.rows.find(row=>row.id==='wsl-plugin-update').name,'dsh-plugin-wsl-env/plugin-update');
- assert.throws(()=>inspectWslPatches([patch(rows.filter(([id])=>id!=='wsl-plugin-update'))],manifest),/incomplete-modern/);
+ assert.match(inspected.contractDigest,/^[a-f0-9]{64}$/);
+ const fewer=inspectWslPatches([patch(rows.filter(([id])=>id!=='wsl-plugin-update'))],manifest);
+ assert.equal(fewer.rows.length,15);assert.notEqual(fewer.contractDigest,inspected.contractDigest);
  assert.throws(()=>inspectWslPatches([patch().replace('disabled: true','disabled: false')],manifest),/suppression/);
 });
 
-test('modern footprint rejects foreign added own-package row and unexpected module replacement',()=>{
- assert.throws(()=>inspectWslPatches([patch([...rows,['unreviewed','dsh-plugin-wsl-env/unreviewed']])],manifest),/unverified-modern/);
- assert.throws(()=>inspectWslPatches([patch(rows.map(([id,name])=>[id,id==='wsl-plugin-update'?'dsh-plugin-wsl-env/status':name]))],manifest),/unverified-modern/);
+test('modern footprint admits added or re-pointed own-package rows but protects core rows',()=>{
+ const added=inspectWslPatches([patch([...rows,['unreviewed','dsh-plugin-wsl-env/unreviewed']])],manifest);
+ assert(added.rows.some(row=>row.id==='unreviewed'&&row.name==='dsh-plugin-wsl-env/unreviewed'));
+ const repointed=inspectWslPatches([patch(rows.map(([id,name])=>[id,id==='wsl-plugin-update'?'dsh-plugin-wsl-env/status':name]))],manifest);
+ assert.equal(repointed.rows.find(row=>row.id==='wsl-plugin-update').name,'dsh-plugin-wsl-env/status');
+ assert.throws(()=>inspectWslPatches([patch([...rows,['plugin-manager','dsh-plugin-wsl-env/plugin-manager']])],manifest),/protected/);
+ assert.throws(()=>inspectWslPatches([patch([...rows,['foreign','@other/evil']])],manifest),/foreign/);
  assert.throws(()=>inspectWslPatches([patch().replace('path: wsl.exe','path: unsafe.exe')],manifest),/terminal/);
 });
 

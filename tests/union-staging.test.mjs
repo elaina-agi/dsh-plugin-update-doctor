@@ -1,15 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, rm, realpath, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, realpath, stat, symlink } from 'node:fs/promises';
 import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';
-import { UNION_LIMITS, UNION_RELEASE_HASHES, canAdmitUnion, unionHash, unionDigest, inspectUnionArchive,
+import { UNION_LIMITS, UNION_RELEASE_HASHES, unionHash, unionDigest, inspectUnionArchive,
     packUnionArchive, safeWinArchivePath, unionRangeMatches, unionDependencySnapshot,
     verifyUnionPublicSnapshot, unionSnapshotEvidence, validateUnionEvidence,
     buildUnionGeneration, unionManifest, verifyUnionInstalledEntries, assertUnionDependencyPolicy } from '../lib/union-generation.js';
 import { UnionGenerationStager, validateUnionReference } from '../lib/union-staging.js';
+import { RegistryStager } from '../lib/staging.js';
+import { canInspectIsolatedPair, needsDependencyIsolation, inspectIsolatedRoot, requireIsolatedTransition } from '../lib/dependency-generation-policy.js';
 import { PUBLIC_REGISTRY } from '../lib/source.js';
 
 const bytes=value=>Buffer.from(typeof value==='string'?value:JSON.stringify(value));
@@ -240,15 +242,25 @@ test('retention refuses a sixth old generation and never drops an existing token
     assert.throws(()=>buildUnionGeneration(archive,snapshot,{retained:[retained[0],retained[0]]}),/union-retained-token/);
 });
 
-test('production fixed release gate and structural identity reject path/proof/generation spoofing',()=> {
-    assert(canAdmitUnion('dsh-union-search','0.10.24','0.10.25'));
-    assert(!canAdmitUnion('owned-fixture','0.10.24','0.10.25'));assert(!canAdmitUnion('dsh-union-search','0.10.25','0.10.26'));
+test('production gate is structural and identity rejects path/proof/generation spoofing',()=> {
+    assert(canInspectIsolatedPair('dsh-union-search','0.11.0','0.11.1'),'a later stable version needs no new allowlist entry');
+    assert(canInspectIsolatedPair('dsh-union-search','0.24.9','0.25.0'));
+    assert(!canInspectIsolatedPair('dsh-union-search','0.11.0','0.11.0'),'same version is not a newer target');
+    assert(!canInspectIsolatedPair('dsh-union-search','0.11.0','0.10.9'),'downgrades are refused');
+    assert(!canInspectIsolatedPair('dsh-union-search','0.11.0','0.12.0-beta.1'),'prerelease targets are refused');
+    assert(canInspectIsolatedPair('owned-fixture','1.0.0','1.0.1'),'the pair predicate only validates shape; the route is decided by installed structure');
+    assert(needsDependencyIsolation('dsh-union-search'),'the known Host reload failure always needs isolation');
+    assert(!needsDependencyIsolation('owned-plugin',{name:'owned-plugin',dependencies:{yaml:'2.9.1'}}));
+    assert(needsDependencyIsolation('owned-plugin',{name:'owned-plugin',dependencies:{cheerio:'^1.2.0',turndown:'^7.2.4','@joplin/turndown-plugin-gfm':'^1.0.68'}}));
     const ref=validReference();validateUnionReference(ref);
     for(const mutate of [r=>r.archiveKey='../escape/package.tgz',r=>r.runtimeGeneration.evidenceKey='../escape.json',
         r=>r.originalSha256='b'.repeat(64),r=>r.origin='file:/somewhere',r=>r.runtimeGeneration.moduleAliases=['rewrite'],
         r=>r.runtimeGeneration.retained=Array(6).fill({}),r=>r.runtimeGeneration.kind='wsl',r=>r.originalRegistry='https://private.example']) {
         const changed=structuredClone(ref);mutate(changed);assert.throws(()=>validateUnionReference(changed),/union-/);
     }
+    // A structural reference without the policy/contract pair is not silently read as legacy.
+    const structural=structuredClone(ref);structural.runtimeGeneration.policy='isolated-js-v1';
+    assert.throws(()=>validateUnionReference(structural),/union-reference-identity/);
 });
 
 test('production does not accept caller-supplied test hashes or arbitrary sources',async t=> {
@@ -257,9 +269,155 @@ test('production does not accept caller-supplied test hashes or arbitrary source
         runtimeGeneration:null,originalSha256:unionHash(source()),sha256:unionHash(source())};},reference:()=>{},reopen:()=>{},verify:async()=>{}};
     const stager=new UnionGenerationStager(join(root,'stage'),{registryStager,releaseHashes:{'0.10.24':unionHash(source())},policy:()=>true});
     await assert.rejects(stager.stagePair({name:'dsh-union-search',from:'0.10.24',to:'0.10.25',packageDirectory:root}),/union-canonical-source-required/);
-    assert.equal(calls,1);
-    await assert.rejects(stager.stagePair({name:'owned',from:'0.10.24',to:'0.10.25',packageDirectory:root}),/union-version-not-reviewed/);
-    assert.equal(calls,1);
+    assert.equal(calls,2);
+    await assert.rejects(stager.stagePair({name:'owned',from:'0.10.24',to:'0.10.25',packageDirectory:root}),/union-canonical-source-required/);
+    assert.equal(calls,4);
     await assert.rejects(stager.reopen({...validReference(),archiveKey:'../escape/package.tgz'}),/union-reference-stage-key/);
     await assert.rejects(stager.prepareRecovery(validReference(),{}),/union-recovery-current-reference-required/);
+});
+
+test('isolated archive contract refuses an unrelated package and a host-declaration change',()=>{
+    const patch='- insert:\n    - id: owned-isolated\n      name: owned-isolated\n';
+    const manifestOf = (extra={}) => ({name:'owned-isolated',version:'1.0.0',type:'module',main:'lib/index.js',
+        exports:{'.':'./lib/index.js'},dependencies:extra.dependencies??{cheerio:'^1.2.0',turndown:'^7.2.4','@joplin/turndown-plugin-gfm':'^1.0.68'},
+        dsh:{bundle:{patch:'./cordis.patch.yml'}}});
+    const entriesOf = manifest => [file('package.json',manifest),file('lib/index.js','export const owned = true;\n'),
+        file('client.js','export const ownedClient = true;\n'),file('cordis.patch.yml',patch)];
+    const accepted=inspectIsolatedRoot(manifestOf(),entriesOf(manifestOf()),[patch]);
+    assert.match(accepted.contractDigest,/^[a-f0-9]{64}$/);
+    // A package without the reviewed pure-JS stack never enters the isolated route.
+    const unrelated={...manifestOf(),name:'owned-unrelated',dependencies:{yaml:'2.9.1'}};
+    assert.throws(()=>inspectIsolatedRoot(unrelated,entriesOf(unrelated),[patch]),/union-package-contract/);
+    // A client block without its matching export is a declared-contract change, not an update.
+    const clientOnly={...manifestOf(),dsh:{bundle:{patch:'./cordis.patch.yml'},client:{platform:'web',inject:['@deepseek-ai/dsh-client-ui-slots']}}};
+    assert.throws(()=>inspectIsolatedRoot(clientOnly,entriesOf(clientOnly),[patch]),/union-client-contract/);
+    const changed={...manifestOf(),exports:{'.':'./lib/index.js','./client':'./client.js'},
+        dsh:{bundle:{patch:'./cordis.patch.yml'},client:{platform:'web',inject:['@deepseek-ai/dsh-client-ui-slots']}}};
+    assert.equal(accepted.contractDigest===inspectIsolatedRoot(changed,entriesOf(changed),[patch]).contractDigest,false);
+    assert.doesNotThrow(()=>requireIsolatedTransition({manifest:manifestOf(),contractDigest:accepted.contractDigest},
+        {manifest:changed,contractDigest:inspectIsolatedRoot(changed,entriesOf(changed),[patch]).contractDigest}),'a structurally valid declaration change is packaged from its own source, not from a reviewed allowlist');
+    assert.throws(()=>requireIsolatedTransition({manifest:manifestOf(),contractDigest:accepted.contractDigest},
+        {manifest:{...manifestOf(),dependencies:{cheerio:'^2.0.0',turndown:'^7.2.4','@joplin/turndown-plugin-gfm':'^1.0.68'}},contractDigest:accepted.contractDigest}),/dependency-closure-requires-download/);
+// A range move the already verified closure satisfies keeps the installed copies.
+const snapshot={packages:[{name:'cheerio',version:'1.3.1'},{name:'turndown',version:'7.2.5'},{name:'@joplin/turndown-plugin-gfm',version:'1.0.68'}]};
+assert.doesNotThrow(()=>requireIsolatedTransition({manifest:manifestOf(),contractDigest:accepted.contractDigest},
+ {manifest:{...manifestOf(),dependencies:{cheerio:'^1.3.0',turndown:'^7.2.4','@joplin/turndown-plugin-gfm':'^1.0.68'}},contractDigest:accepted.contractDigest},{snapshot}));
+assert.throws(()=>requireIsolatedTransition({manifest:manifestOf(),contractDigest:accepted.contractDigest},
+ {manifest:{...manifestOf(),dependencies:{cheerio:'^1.3.0',turndown:'^7.2.4','@joplin/turndown-plugin-gfm':'^1.0.68'}},contractDigest:accepted.contractDigest},{snapshot:{packages:[{name:'cheerio',version:'1.2.0'}]}}),/dependency-closure-requires-download/);
+    // A dynamic host expression stays outside the reviewed single static row.
+    assert.throws(()=>inspectIsolatedRoot(manifestOf(),entriesOf(manifestOf()),['- insert:\n    - id: owned-isolated\n      name: owned-isolated\n      disabled: !!js "true"\n']),/dynamic-or-included/i);
+});
+
+
+const ISOLATED='owned-isolated';
+const isolatedManifest=(version,aRange)=>({name:ISOLATED,version,type:'module',main:'lib/index.js',
+    exports:{'.':'./lib/index.js','./client':'./client.js','./locale/*.json':'./locale/*.json','./package.json':'./package.json'},
+    dependencies:{cheerio:'^1.2.0',turndown:'^7.2.4','@joplin/turndown-plugin-gfm':'^1.0.68','owned-a':aRange,'@deepseek-ai/schemastery':'^3.18.4'},
+    dsh:{bundle:{patch:'./cordis.patch.yml'},client:{platform:'web',inject:['@deepseek-ai/dsh-client-ui-slots']}}});
+const isolatedArchive=(version,aRange='^1.0.0')=>packUnionArchive([file('package.json',isolatedManifest(version,aRange)),
+    file('lib/index.js',`export const version='${version}';\n`),file('client.js','export const client=true;\n'),
+    file('locale/en.json',{}),file('cordis.patch.yml','- insert:\n    - id: owned-isolated\n      name: owned-isolated\n')]);
+const dependencyArchive=(name,version)=>packUnionArchive([file('package.json',{name,version}),
+    file('index.js',`module.exports=${JSON.stringify(name+'@'+version)};\n`)]);
+async function closureFixture(t) {
+    const root=await fixture(t),packageDir=join(root,'package');
+    await mkdir(packageDir,{recursive:true});
+    await installEntries(inspectUnionArchive(isolatedArchive('0.11.0')),packageDir);
+    return {root,packageDir};
+}
+async function installDependency(base,name,version) {
+    const archive=dependencyArchive(name,version);
+    await installEntries(inspectUnionArchive(archive),join(base,'node_modules',...name.split('/')));
+    return {name,version,archive};
+}
+function registryFetcher(records,{corrupt}={}) {
+    const byKey=new Map(records.map(record=>[record.name+'@'+record.version,record]));
+    const archives=new Map(records.map(record=>[`/${record.name}/-/${record.name.split('/').at(-1)}-${record.version}.tgz`,record]));
+    const packuments=new Map();
+    const metadata=record=>{const manifest=JSON.parse(inspectUnionArchive(record.archive).find(entry=>entry.name==='package/package.json').bytes.toString('utf8'));
+        return {...manifest,dist:{tarball:`${PUBLIC_REGISTRY}/${record.name}/-/${record.name.split('/').at(-1)}-${record.version}.tgz`,integrity:sri(record.archive)}};};
+    for(const record of records) {if(!packuments.has(record.name))packuments.set(record.name,[]);packuments.get(record.name).push(record);}
+    return async url=> {
+        const target=new URL(url);
+        if(archives.has(target.pathname)) {const record=archives.get(target.pathname);return new Response(corrupt?.(record)??record.archive);}
+        const parts=target.pathname.slice(1).split('/').map(decodeURIComponent);
+        if(parts.length===2) {const record=byKey.get(parts[0]+'@'+parts[1]);
+            if(record)return Response.json(metadata(record));
+            throw Error('unexpected-owned-registry-version:'+target.href);}
+        if(parts.length===1&&packuments.has(parts[0]))return Response.json({name:parts[0],versions:Object.fromEntries(packuments.get(parts[0]).map(record=>[record.version,metadata(record)]))});
+        throw Error('unexpected-owned-registry-request:'+target.href);
+    };
+}
+function closureStager(root,records,options={}) {
+    const fetcher=registryFetcher(records,options);
+    return new UnionGenerationStager(join(root,'union'),{registryStager:new RegistryStager(join(root,'staged'),{fetcher}),fetcher});
+}
+
+test('inspectPair admits a declaration move the installed closure already satisfies',async t=>{
+    const {root,packageDir}=await closureFixture(t);
+    const records=[await installDependency(packageDir,'cheerio','1.2.0'),await installDependency(packageDir,'turndown','7.2.4'),
+        await installDependency(packageDir,'@joplin/turndown-plugin-gfm','1.0.68'),await installDependency(packageDir,'owned-a','1.0.0'),
+        {name:ISOLATED,version:'0.11.0',archive:isolatedArchive('0.11.0')},
+        {name:ISOLATED,version:'0.11.1',archive:isolatedArchive('0.11.1')}];
+    const stager=closureStager(root,records);
+    const admission=await stager.inspectPair({name:ISOLATED,from:'0.11.0',to:'0.11.1',packageDirectory:packageDir});
+    assert.equal(admission.status,'passed');assert.match(admission.graphDigest,/^[a-f0-9]{64}$/);
+    assert.equal(admission.closureDigest,undefined);
+});
+
+test('a target that needs new dependencies plans a read-only download and stages a self-contained closure',async t=>{
+    const {root,packageDir}=await closureFixture(t);
+    const records=[await installDependency(packageDir,'cheerio','1.2.0'),await installDependency(packageDir,'turndown','7.2.4'),
+        await installDependency(packageDir,'@joplin/turndown-plugin-gfm','1.0.68'),await installDependency(packageDir,'owned-a','1.0.0'),
+        {name:ISOLATED,version:'0.11.0',archive:isolatedArchive('0.11.0')},
+        {name:ISOLATED,version:'0.12.0',archive:isolatedArchive('0.12.0','^2.0.0')},
+        {name:'owned-a',version:'2.0.0',archive:dependencyArchive('owned-a','2.0.0')}];
+    const stager=closureStager(root,records);
+    const admission=await stager.inspectPair({name:ISOLATED,from:'0.11.0',to:'0.12.0',packageDirectory:packageDir});
+    assert.equal(admission.status,'download-required');assert.equal(admission.closurePackages,1);
+    assert.match(admission.closureDigest,/^[a-f0-9]{64}$/);
+    await assert.rejects(()=>stat(join(root,'union')),error=>error.code==='ENOENT','the read-only plan writes nothing');
+    const pair=await stager.stagePair({name:ISOLATED,from:'0.11.0',to:'0.12.0',packageDirectory:packageDir,expected:admission});
+    assert.equal(pair.closure.packages,1);assert(pair.closure.bytes>0);
+    validateUnionReference(stager.reference(pair.next));validateUnionReference(stager.reference(pair.previous));
+    assert.equal(pair.next.version,'0.12.0');assert.equal(pair.previous.version,'0.11.0');
+    const reopened=await stager.reopen(stager.reference(pair.next));
+    assert.equal(reopened.runtimeGeneration.policy,'isolated-js-v1');
+    const nextEntries=inspectUnionArchive(await readFile(pair.next.archivePath));
+    const prefix='package/'+pair.next.runtimeGeneration.generation+'/';
+    const embedded=JSON.parse(nextEntries.find(entry=>entry.name===prefix+'node_modules/owned-a/package.json').bytes.toString('utf8'));
+    assert.equal(embedded.version,'2.0.0');
+    const previousEntries=inspectUnionArchive(await readFile(pair.previous.archivePath));
+    const previousPrefix='package/'+pair.previous.runtimeGeneration.generation+'/';
+    const retained=JSON.parse(previousEntries.find(entry=>entry.name===previousPrefix+'node_modules/owned-a/package.json').bytes.toString('utf8'));
+    assert.equal(retained.version,'1.0.0');
+    const leftovers=await readdir(join(root,'union'));
+    assert(!leftovers.some(name=>name.startsWith('closure-')),'the materialised closure directory is removed');
+});
+
+test('a closure archive that fails its published integrity leaves no stage behind',async t=>{
+    const {root,packageDir}=await closureFixture(t);
+    const records=[await installDependency(packageDir,'cheerio','1.2.0'),await installDependency(packageDir,'turndown','7.2.4'),
+        await installDependency(packageDir,'@joplin/turndown-plugin-gfm','1.0.68'),await installDependency(packageDir,'owned-a','1.0.0'),
+        {name:ISOLATED,version:'0.11.0',archive:isolatedArchive('0.11.0')},
+        {name:ISOLATED,version:'0.12.0',archive:isolatedArchive('0.12.0','^2.0.0')},
+        {name:'owned-a',version:'2.0.0',archive:dependencyArchive('owned-a','2.0.0')}];
+    const stager=closureStager(root,records,{corrupt:record=>record.name==='owned-a'&&record.version==='2.0.0'?Buffer.from('tampered-closure-archive'):null});
+    await assert.rejects(()=>stager.stagePair({name:ISOLATED,from:'0.11.0',to:'0.12.0',packageDirectory:packageDir}),error=>error.code==='dependency-closure-integrity');
+    const leftovers=await readdir(join(root,'union')).catch(error=>error.code==='ENOENT'?[]:Promise.reject(error));
+    assert(!leftovers.some(name=>name.startsWith('closure-')));
+});
+
+test('verified public proofs are reused between scans without new requests', async t => {
+    const root = await fixture(t), manifest = rootManifest('0.10.24', { 'owned-a': '^1.0.0' });
+    await installEntries(inspectUnionArchive(source('0.10.24', manifest.dependencies)), root);
+    const a = await installPackage(root, 'owned-a', { version: '1.0.0' }, { 'index.js': 'module.exports="a";' });
+    const snapshot = await unionDependencySnapshot(root, manifest);
+    const cache = new Map(), mock = mockedPublic([{ name: 'owned-a', version: '1.0.0', ...a }]);
+    const first = await verifyUnionPublicSnapshot(snapshot, { fetcher: mock.fetcher, cache });
+    const calls = mock.calls.length;
+    assert(calls > 0);
+    const second = await verifyUnionPublicSnapshot(snapshot, { fetcher: mock.fetcher, cache });
+    assert.equal(mock.calls.length, calls, 'the second scan reuses the cached public proof');
+    assert.deepEqual(second, first);
 });

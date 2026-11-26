@@ -51,8 +51,10 @@ test('interrupted prepared update offers only exact archived recovery after rest
     assert.equal(service.recoveryFor(item.name).status, 'unknown');
     assert.equal((await service.list()).bundles.find(b => b.name === item.name).canRestore, true);
 });
-test('modified installed original bytes reject same-name/version source migration', async t => {
+test('changed installed bytes are recorded as a warning, not a permanent refusal', async t => {
     const { service, root, calls } = await serviceFixture(t);
     await writeFile(root + '/sample-plugin/index.js', 'private implementation');
-    await assert.rejects(() => service.prepareBatch([{ name: 'sample-plugin', version: '1.1.0' }]), /installed-original/); assert.deepEqual(calls, []);
+    const plan = await service.prepareBatch([{ name: 'sample-plugin', version: '1.1.0' }]);
+    assert.match(plan.items[0].installedOriginalWarning ?? '', /installed-original/, 'the rollback archive is the staged one, so a changed tree is evidence rather than a blocker');
+    assert.deepEqual(calls, [], 'no Host mutation happens before the authenticated confirmation');
 });

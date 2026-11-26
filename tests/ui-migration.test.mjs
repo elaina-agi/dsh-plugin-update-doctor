@@ -48,44 +48,37 @@ test('actual migration confirmation describes source change, defaults to wait an
   const harness=dialogHarness(basePlan),tree=harness.render();
   assert(text(tree).includes('确认从归档迁回 npm 来源'));assert(text(tree).includes('同一版本，不是升级'));
   assert(text(tree).includes('临时卸载')||text(tree).includes('暂时卸载'));assert(text(tree).includes('版本号不变'));
-  assert(harness.primary().props.disabled);assert.equal(harness.states[2],'wait-for-idle');
-  const ack=descendants(tree).find(node=>node.type==='input'&&node.props.type==='checkbox'&&!node.props['data-testid']);ack.props.onChange({target:{checked:true}});
-  assert.equal(harness.primary().props.disabled,false);harness.primary().props.onClick();
-  assert.equal(harness.confirmations[0].taskPolicy,'wait-for-idle');assert.equal(harness.confirmations[0].confirmCancel,undefined);
-  harness.setters[2]('cancel-active');assert.equal(harness.primary().props.disabled,true);
-  harness.find('pud-confirm-cancel').props.onChange({target:{checked:true}});assert.equal(harness.primary().props.disabled,false);
+  assert.equal(harness.primary().props.disabled,false,'no consent checkbox gates the migration');
+  assert.equal(harness.states[1],'wait-for-idle');
+  harness.primary().props.onClick();
+  assert.equal(harness.confirmations[0].taskPolicy,'wait-for-idle');assert.equal(harness.confirmations[0].confirmCancel,undefined);assert.equal(harness.confirmations[0].confirmMigration,true);
+  harness.setters[1]('cancel-active');assert.equal(harness.primary().props.disabled,false,'choosing the stop option is the consent; no second checkbox');
+  harness.primary().props.onClick();assert.equal(harness.confirmations[1].confirmCancel,true);
 });
-
-test('public mirror acknowledgement remains separate from ordinary operation acceptance',()=>{
+test('public mirror safety stays visible without a separate checkbox',()=>{
   const plan={...basePlan,operation:'host-self-update',mirrorRiskRequiresAcknowledgement:true,items:[{name:'dsh-plugin-update-doctor',from:'0.5.0',to:'0.5.1',publicMirror:true,sourceMode:'public-mirror',registry:'https://registry.npmmirror.com'}]};
   const harness=dialogHarness(plan),tree=harness.render();
   assert(text(tree).includes('固定公共 npm 镜像'));assert(text(tree).includes('并非原子字节替换'));assert(text(tree).includes('https://registry.npmmirror.com'));
-  assert.equal(harness.find('pud-confirm-public-mirror').props.checked,false);
-  const ack=descendants(tree).find(node=>node.type==='input'&&node.props.type==='checkbox'&&!node.props['data-testid']);ack.props.onChange({target:{checked:true}});
-  assert.equal(harness.primary().props.disabled,true);harness.primary().props.onClick();assert.equal(harness.confirmations[0].confirmPublicMirror,undefined,'unchecked source consent is never manufactured by handler');
-  harness.find('pud-confirm-public-mirror').props.onChange({target:{checked:true}});assert.equal(harness.primary().props.disabled,false);
-  harness.primary().props.onClick();assert.equal(harness.confirmations[1].confirmPublicMirror,true);
+  assert.equal(harness.find('pud-confirm-public-mirror'),undefined,'no checkbox remains');
+  assert.equal(harness.primary().props.disabled,false);
+  harness.primary().props.onClick();assert.equal(harness.confirmations[0].confirmPublicMirror,true);
   const commit=section('      const commit =','      const cancelSelfWait =');assert(commit.includes('mirrorAcknowledgementRequired(plan) && confirmPublicMirror === true'));
 });
-
-test('official query public fallback confirmation labels the actual source and requires independent risk consent',()=>{
+test('official query public fallback labels the actual source without a checkbox',()=>{
   const plan={...basePlan,operation:'host-self-update',mirrorRiskRequiresAcknowledgement:true,hostRegistryPlan:{queryRegistry:'https://registry.npmjs.org',registry:null,resolved:'https://registry.npmjs.org',fallbackRegistries:['https://registry.npmmirror.com']},items:[{name:'dsh-plugin-update-doctor',from:'0.5.3',to:'0.5.4',publicFallback:true,sourceMode:'public-fallback',registry:'https://registry.npmjs.org'}]};
   assert.equal(predicates.mirrorAcknowledgementRequired(plan),true);
   const harness=dialogHarness(plan),tree=harness.render();
   assert(text(tree).includes('版本查询来自官方 npm'));assert(text(tree).includes('不会改动你的全局源设置'));assert(text(tree).includes('https://registry.npmmirror.com'));
   assert(!text(tree).includes('本次使用固定公共 npm 镜像，'));
-  const ack=descendants(tree).find(node=>node.type==='input'&&node.props.type==='checkbox'&&!node.props['data-testid']);ack.props.onChange({target:{checked:true}});
-  assert.equal(harness.primary().props.disabled,true);
-  harness.find('pud-confirm-public-mirror').props.onChange({target:{checked:true}});assert.equal(harness.primary().props.disabled,false);
+  assert.equal(harness.find('pud-confirm-public-mirror'),undefined);
+  assert.equal(harness.primary().props.disabled,false);
   harness.primary().props.onClick();assert.equal(harness.confirmations[0].confirmPublicMirror,true);assert.equal(harness.confirmations[0].confirmCancel,undefined);
 });
-
-test('ordinary mirror batch uses the same explicit source acknowledgement without self-update semantics',()=>{
+test('ordinary mirror batch shows the source note without a checkbox or self-update semantics',()=>{
   const plan={...basePlan,operation:'batch-update',items:[{name:'owned-plugin',from:'1.0.0',to:'1.1.0',registry:'https://registry.npmmirror.com',installMode:'registry-spec'}]};
   assert.equal(predicates.mirrorAcknowledgementRequired(plan),true);const harness=dialogHarness(plan),tree=harness.render();
-  assert(text(tree).includes('固定公共 npm 镜像'));assert(!text(tree).includes('确认更新器自身升级'));assert(harness.find('pud-confirm-public-mirror'));
+  assert(text(tree).includes('固定公共 npm 镜像'));assert(text(tree).includes('https://registry.npmmirror.com'));assert(!text(tree).includes('确认更新器自身升级'));assert.equal(harness.find('pud-confirm-public-mirror'),undefined);
 });
-
 test('mirror confirmation projects bounded safe registry plans without links or credential text',()=>{
   const plan={...basePlan,mirrorRiskRequiresAcknowledgement:true,hostRegistryPlan:{registry:null,resolved:'https://registry.npmmirror.com',fallbackRegistries:['https://registry.npmjs.org','https://user:secret@private.invalid/?token=secret']}};
   const rows=predicates.mirrorPlanRows(plan);assert.equal(rows[0].origin,'https://registry.npmmirror.com');assert.equal(rows[3].origin,'');
@@ -98,8 +91,8 @@ test('mirror confirmation projects bounded safe registry plans without links or 
 test('undisclosed ordinary mirror fallback plan is not presented as complete or confirmed',()=>{
   const plan={...basePlan,operation:'batch-update',mirrorRiskRequiresAcknowledgement:true,items:[{name:'owned-plugin',registry:'https://registry.npmmirror.com',hostRegistryTransport:{fallbackConfigured:true}}]};
   const evidence=predicates.mirrorPlanEvidence(plan);assert.equal(evidence.complete,false);assert.equal(evidence.fallbackLabel,'mirrorFallbackConfigured');
-  const tree=dialogHarness(plan).render();assert(text(tree).includes('未提供或绑定完整宿主安装源计划'));assert(text(tree).includes('准备时观察到宿主已配置备用来源'));
-  assert(text(tree).includes('这不表示确认未披露的传输计划'));assert(!text(tree).includes('准备时的宿主安装源计划证据'));
+  const harness=dialogHarness(plan),tree=harness.render();assert(text(tree).includes('未提供或绑定完整宿主安装源计划'));assert(text(tree).includes('准备时观察到宿主已配置备用来源'));
+  assert.equal(harness.find('pud-confirm-public-mirror'),undefined,'no checkbox remains for an undisclosed plan');assert(!text(tree).includes('准备时的宿主安装源计划证据'));
 });
 
 test('mirror delay and other information warnings never manufacture a core-service impact finding',()=>{
@@ -108,7 +101,7 @@ test('mirror delay and other information warnings never manufacture a core-servi
   const InformationWarnings=vm.runInNewContext(`${section('    function InformationWarnings(','    function VersionValue(')} InformationWarnings;`,{h,informationWarnings:predicates.informationWarnings,localText:(translate,key,fallback)=>translate(key)!==key?translate(key):fallback});
   const tree=InformationWarnings({item,t});assert(text(tree).includes('公共镜像可能落后于官方 npm'));assert(!text(tree).includes('高影响'));
   assert.equal(predicates.installedSourceLabel({doctorArchive:true,sourceKind:'registry'}),'archiveSourceIdentity');assert(labels.ZH.archiveSourceIdentity.includes('本地归档'));
-  assert(labels.ZH['reason.dependency-graph-changed'].includes('单独审查'));assert(labels.ZH['reason.dependency-not-resolved'].includes('官方管理器'));
+  assert(labels.ZH['reason.dependency-graph-changed'].includes('实际依赖树'));assert(labels.ZH['reason.dependency-not-resolved'].includes('官方管理器'));
 });
 
 test('official detail extension inspects only eligible subjects and verified Doctor records',()=>{
@@ -126,10 +119,14 @@ test('official detail extension inspects only eligible subjects and verified Doc
   assert(component.includes('current.current?.abort()'));
 });
 
-test('Union generation requires explicit derived-source consent independently of ordinary and stop acknowledgements',()=>{
- const plan={...basePlan,operation:'batch-update',unionGenerationRequiresAcknowledgement:true,items:[{name:'dsh-union-search',from:'0.10.24',to:'0.10.25',installMode:'union-generation'}]},harness=dialogHarness(plan),tree=harness.render();assert(text(tree).includes('本地归档'));assert(text(tree).includes('Versions'));assert.equal(harness.find('pud-confirm-union-generation').props.checked,false);const ack=descendants(tree).find(node=>node.type==='input'&&node.props.type==='checkbox'&&!node.props['data-testid']);ack.props.onChange({target:{checked:true}});assert.equal(harness.primary().props.disabled,true);harness.find('pud-confirm-union-generation').props.onChange({target:{checked:true}});assert.equal(harness.primary().props.disabled,false);harness.primary().props.onClick();assert.equal(harness.confirmations[0].taskPolicy,'wait-for-idle');assert.equal(harness.confirmations[0].confirmUnionGeneration,true);assert.equal(harness.confirmations[0].confirmCancel,undefined);
+test('Union generation states its derived source without a separate checkbox',()=>{
+ const plan={...basePlan,operation:'batch-update',unionGenerationRequiresAcknowledgement:true,items:[{name:'dsh-union-search',from:'0.10.24',to:'0.10.25',installMode:'union-generation'}]},harness=dialogHarness(plan),tree=harness.render();
+ assert(text(tree).includes('本地归档'));assert(text(tree).includes('Versions'));
+ assert.equal(harness.find('pud-confirm-union-generation'),undefined,'no checkbox remains');
+ assert.equal(harness.primary().props.disabled,false);
+ harness.primary().props.onClick();
+ assert.equal(harness.confirmations[0].taskPolicy,'wait-for-idle');assert.equal(harness.confirmations[0].confirmUnionGeneration,true);assert.equal(harness.confirmations[0].confirmCancel,undefined);
 });
-
 test('official section uses public slot and layout navigation without DOM or route injection',()=>{
   const registration=section("          scope.slots.inject('plugins.detail.section'","          scope.slots.inject('main'");
   assert(registration.includes("name: 'plugins.detail.section'"));assert(registration.includes("scope.get('layout')"));assert(registration.includes('layout.selectPanel(PANEL_ID)'));

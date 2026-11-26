@@ -12,7 +12,7 @@ test('primary and disabled buttons use readable Host theme foreground pairs', as
 test('task cancellation option defaults to wait and requires separate acknowledgement', async()=>{
     const code=await readFile(new URL('../client.js',import.meta.url),'utf8');
     assert(code.includes("useState('wait-for-idle')"));
-    assert(code.includes('confirmCancel'));
-    assert(code.includes('stopConsent'));
+    assert(code.includes('confirmCancel: true'));
     assert(code.includes("taskPolicy === 'cancel-active'"));
+    assert(!code.includes('pud-confirm-cancel'), 'the stop option itself is the consent');
 });

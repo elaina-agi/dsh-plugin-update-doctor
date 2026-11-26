@@ -20,10 +20,11 @@ test('self confirmation explains independent Host execution and release of the o
     assert(dialog.includes('selfUpdating = isSelf(plan.operation)'));
     assert(dialog.includes("t('confirmSelfTitle')"));
     assert(dialog.includes("t('confirmSelfImpact')"));
-    assert(dialog.includes("t('acknowledgeSelf')"));
+    assert(!dialog.includes('setAck('), 'the simplified confirmation keeps no generic review checkbox');
     assert(dialog.includes("useState('wait-for-idle')"));
     assert(dialog.includes('cancel.current?.focus()'));
-    assert(dialog.includes("taskPolicy === 'cancel-active' && !confirmCancel"));
+    assert(!dialog.includes("'data-testid': 'pud-confirm-cancel'"), 'no separate stop checkbox');
+    assert(dialog.includes("{ confirmCancel: true }"));
     assert(dialog.includes("t(selfUpdating ? 'selfGateHelp' : 'waitPolicyHelp')"));
     assert(code.includes('旧更新器卸载时释放门禁'));
 });

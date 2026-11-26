@@ -17,22 +17,22 @@ export function tar(entries) {
     }
     parts.push(Buffer.alloc(1024)); return gzipSync(Buffer.concat(parts));
 }
-export async function serviceFixture(t, { names = ['sample-plugin'], failTarget = false, failRestore = false, gate } = {}) {
+export async function serviceFixture(t, { names = ['sample-plugin'], failTarget = false, failRestore = false, gate, patchSuffix = '', overrides = [] } = {}) {
     const root = await mkdtemp(join(tmpdir(), 'dsh-v3-test-')); t.after(() => rm(root, { recursive: true, force: true }));
-    const bundles = names.map(name => ({ name, version: '1.0.0', source: name + '@1.0.0', installed: true, enabled: true, removable: true, availability: 'profile', update: 'registry', rows: [{ rowId: name + '-feature', moduleName: name, entryId: 'include:' + name + '-feature' }] }));
+    const bundles = names.map(name => ({ name, version: '1.0.0', source: name + '@1.0.0', installed: true, enabled: true, removable: true, availability: 'profile', update: 'registry', ...(overrides.length ? { overrides: [...overrides] } : {}), rows: [{ rowId: name + '-feature', moduleName: name, entryId: 'include:' + name + '-feature' }] }));
     const calls = []; const state = { failTarget, failRestore, registry: 'https://registry.npmjs.org', afterRemove: null, afterInstall: null };
     for (const bundle of bundles) { await mkdir(join(root, bundle.name)); await writeFile(join(root, bundle.name, 'package.json'), JSON.stringify({ name: bundle.name, version: bundle.version, dsh: { bundle: { patch: 'cordis.patch.yml' } } })); }
     const stager = new RegistryStager(join(root, 'cache', 'dsh-plugin-update-doctor', 'test', 'staged'), { fetcher: async url => {
         const parsed = new URL(url), segments = parsed.pathname.split('/').filter(Boolean), name = decodeURIComponent(segments[0]);
         const version = parsed.pathname.endsWith('.tgz') ? /-(\d+\.\d+\.\d+)\.tgz$/.exec(parsed.pathname)[1] : segments[1];
         const manifest = { name, version, type: 'module', exports: { '.': './index.js' }, dsh: { bundle: { patch: 'cordis.patch.yml' } } };
-        const bytes = tar([['package/package.json', JSON.stringify(manifest)], ['package/cordis.patch.yml', '- insert:\n    - id: ' + name + '-feature\n      name: ' + name + '\n'], ['package/index.js', 'export function apply(){}']]);
+        const bytes = tar([['package/package.json', JSON.stringify(manifest)], ['package/cordis.patch.yml', '- insert:\n    - id: ' + name + '-feature\n      name: ' + name + '\n' + patchSuffix], ['package/index.js', 'export function apply(){}']]);
         return parsed.pathname.endsWith('.tgz') ? new Response(bytes) : Response.json({ ...manifest, dist: { tarball: 'https://registry.npmjs.org/' + name + '/-/' + name + '-' + version + '.tgz', integrity: 'sha512-' + createHash('sha512').update(bytes).digest('base64') } });
     } });
     for (const bundle of bundles) {
         const original = await stager.stage(bundle.name, bundle.version);
         await writeFile(join(root, bundle.name, 'package.json'), JSON.stringify(original.manifest));
-        await writeFile(join(root, bundle.name, 'cordis.patch.yml'), '- insert:\n    - id: ' + bundle.name + '-feature\n      name: ' + bundle.name + '\n');
+        await writeFile(join(root, bundle.name, 'cordis.patch.yml'), '- insert:\n    - id: ' + bundle.name + '-feature\n      name: ' + bundle.name + '\n' + patchSuffix);
         await writeFile(join(root, bundle.name, 'index.js'), 'export function apply(){}');
     }
     const manager = {

@@ -36,12 +36,13 @@
 | npm 0.5.3（2026-11-24核验） | 48／201,051 | `a05a5594af5d440e8ef3ac286f3efed8cad22dd116a03423352d1d08512887f6` |
 | npm 0.5.4（2026-11-27核验） | 48／198,531 | `c98968dc4d723df786dd7aa148cc552633a12791860a920c04e6d1fa57c79f7e` |
 | npm 0.6.14（2026-11-27核验） | 80／275,848 | `6e96480e60acea46835b33ac33bdbd2266acf47e4e18057c530c2a3d00df5f99` |
+| npm 0.6.15（2026-11-27核验） | 81／279,225 | `5bfcad74b1e235033b172fdd7520f0e36c07aaebb8b0ee28f78748ac47b8c83e` |
 
 原npm0.5.0源码提交为 `7eb59f934ae80ee5636bddfbc79afa67bbc2970e`，SHA1 `f9bab2c9a2e2a0eeb61038805006060f269bee34`。npm0.5.3 SHA1为 `b73a14f02628d5133d6539c1eb70b3c2376cae96`。二者是版本精确的公共输入，不随未来标签变动改写。
 
-npm0.5.4与npm0.6.14的SHA1分别为 `12195897fcf4369c11772f8e6a4f34f6886b98b0` 与 `75538d01fd1d14b27e51b835531896ca144ae278`（后者即registry的`dist.shasum`）。npm0.6.14档案的`dist.integrity`为`sha512-zhtxq+mVCjK8F+eULMh60QZRbJEsvs/6KQPge7hizMWk7SpPJ65GP4A2r+sSfb4Am3c6AblRKlL2REjmhcftPQ==`，从官方registry下载的归档与本地档案逐字节相同。
+npm0.5.4、npm0.6.14与npm0.6.15的SHA1分别为 `12195897fcf4369c11772f8e6a4f34f6886b98b0`、`75538d01fd1d14b27e51b835531896ca144ae278` 与 `de3e587d9a2ed3a4b999df6d455e4d09da2427a4`（即各自registry的`dist.shasum`）。npm0.6.14档案的`dist.integrity`为`sha512-zhtxq+mVCjK8F+eULMh60QZRbJEsvs/6KQPge7hizMWk7SpPJ65GP4A2r+sSfb4Am3c6AblRKlL2REjmhcftPQ==`，npm0.6.15为`sha512-9bLQOkqrFF2YX9ZPG6Ay5NjLlfz//owIa43gXP2M/PPyF79lKhOQcvqQW9JKiwI+3bXwNjq/jIMXU6LWy8KRpQ==`；两者从官方registry下载的归档都与本地档案逐字节相同。
 
-npm0.6.14档案由提交 `e8f922e516ac423e0dc09e66634beaa5a2e3dbe4`（标签`v0.6.14`）经`.tools/pack-0.6.14-reviewed.mjs`生成，包内含80个文件、不含`docs/UI_SIMPLIFICATION_NOTES.md`；只用`npm pack`从该提交打包会得到不同字节，发布和核验都以该档案文件为准，不以「源码能打包」冒充同一份发行物。
+npm0.6.14与npm0.6.15档案分别由提交 `e8f922e516ac423e0dc09e66634beaa5a2e3dbe4`（标签`v0.6.14`）和 `71ec09c604f28cbe7583363529fd552115f1ca5e`（标签`v0.6.15`）经对应的`.tools/pack-0.6.x-reviewed.mjs`生成，包内不含`docs/UI_SIMPLIFICATION_NOTES.md`；只用`npm pack`从提交打包会得到不同字节，发布和核验都以该档案文件为准，不以「源码能打包」冒充同一份发行物。
 
 用户在原npm0.5.0面板确认到0.5.3的真实自身更新已核验：官方applied、新实例verifiedApplied、48文件一致、Host1/1active。测试临时使用官方源／无fallback，结束后原设置恢复；它不证明真实镜像升级或默认网络fallback切换。WSL0.26.2→0.29.0真实记录、0.5.4默认公共备用源／固定CDN修复的隔离测试及剩余边界见[验证记录](<VERIFICATION.md>)。
 
